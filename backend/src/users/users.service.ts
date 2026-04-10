@@ -98,9 +98,10 @@ export class UsersService {
     }
 
     // If email is being updated, check for duplicates
-    if (updateUserDto.email && updateUserDto.email !== user.email) {
+    const updateData: any = { ...updateUserDto };
+    if (updateData.email && updateData.email !== user.email) {
       const existingUser = await this.prisma.user.findUnique({
-        where: { email: updateUserDto.email },
+        where: { email: updateData.email },
       });
 
       if (existingUser) {
@@ -109,13 +110,13 @@ export class UsersService {
     }
 
     // Hash password if being updated
-    if (updateUserDto.password) {
-      updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
+    if (updateData.password) {
+      updateData.password = await bcrypt.hash(updateData.password, 10);
     }
 
     const updatedUser = await this.prisma.user.update({
       where: { id },
-      data: updateUserDto,
+      data: updateData,
       select: {
         id: true,
         name: true,

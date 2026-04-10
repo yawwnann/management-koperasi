@@ -122,7 +122,9 @@ export class ReportsService {
 
       const angkatanData = angkatanMap.get(ang);
       angkatanData.totalMembers++;
-      angkatanData.totalSavings += user.savings ? Number(user.savings.total) : 0;
+      angkatanData.totalSavings += user.savings
+        ? Number(user.savings.total)
+        : 0;
       angkatanData.totalPayments += user.payments.reduce(
         (sum, p) => sum + Number(p.nominal),
         0,

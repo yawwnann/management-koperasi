@@ -8,12 +8,16 @@ import { AuthService } from './auth.service';
   imports: [
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN'),
-        },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const secret =
+          configService.get<string>('JWT_SECRET') || 'default-secret';
+        const expiresIn = (configService.get<string>('JWT_EXPIRES_IN') ||
+          '7d') as '7d' | string;
+        return {
+          secret,
+          signOptions: { expiresIn: expiresIn as any },
+        };
+      },
       inject: [ConfigService],
     }),
   ],

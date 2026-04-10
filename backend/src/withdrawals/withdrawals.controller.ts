@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Body,
-  Param,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Req } from '@nestjs/common';
 import { WithdrawalsService } from './withdrawals.service';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
 import { ApproveWithdrawalDto } from './dto/approve-withdrawal.dto';
@@ -38,6 +30,10 @@ export class WithdrawalsController {
     @Body() approveWithdrawalDto: ApproveWithdrawalDto,
     @Req() req,
   ) {
-    return this.withdrawalsService.approve(id, approveWithdrawalDto, req.user.sub);
+    return this.withdrawalsService.approve(
+      id,
+      approveWithdrawalDto,
+      req.user.sub,
+    );
   }
 }

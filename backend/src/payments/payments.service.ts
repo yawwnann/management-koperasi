@@ -3,20 +3,24 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { ApprovePaymentDto } from './dto/approve-payment.dto';
-import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class PaymentsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(userId: string, createPaymentDto: CreatePaymentDto, proofImage: string) {
+  async create(
+    userId: string,
+    createPaymentDto: CreatePaymentDto,
+    proofImage: string,
+  ) {
     const payment = await this.prisma.payment.create({
       data: {
         userId,
-        nominal: new Decimal(createPaymentDto.nominal),
+        nominal: new Prisma.Decimal(createPaymentDto.nominal),
         proofImage,
         description: createPaymentDto.description,
         status: 'PENDING',
@@ -62,7 +66,11 @@ export class PaymentsService {
     });
   }
 
-  async approve(paymentId: string, approvePaymentDto: ApprovePaymentDto, adminId: string) {
+  async approve(
+    paymentId: string,
+    approvePaymentDto: ApprovePaymentDto,
+    adminId: string,
+  ) {
     const payment = await this.prisma.payment.findUnique({
       where: { id: paymentId },
       include: { user: true },

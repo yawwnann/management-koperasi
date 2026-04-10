@@ -22,15 +22,16 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:push": "prisma db push",
-    "prisma:seed": "ts-node prisma/seed.ts"
+    "prisma:seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.0",
+    "@nestjs/mapped-types": "^2.1.1",
     "@nestjs/passport": "^11.0.0",
     "@nestjs/platform-express": "^11.0.1",
-    "@nestjs/config": "^4.0.0",
     "@prisma/client": "^7.0.0",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",

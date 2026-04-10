@@ -12,12 +12,21 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { extname } from 'path';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { ApprovePaymentDto } from './dto/approve-payment.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import * as fs from 'fs';
+
+interface JwtRequest extends Request {
+  user: {
+    sub: string;
+    role: string;
+    email: string;
+    name: string;
+  };
+}
 
 @Controller('payments')
 export class PaymentsController {
@@ -29,26 +38,31 @@ export class PaymentsController {
       storage: diskStorage({
         destination: (req, file, cb) => {
           const uploadPath = process.env.UPLOAD_PATH || './uploads';
-          // Create uploads directory if it doesn't exist
           if (!fs.existsSync(uploadPath)) {
             fs.mkdirSync(uploadPath, { recursive: true });
           }
           cb(null, uploadPath);
         },
         filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-          cb(null, `payment-${uniqueSuffix}${extname(file.originalname)}`);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(
+            null,
+            `payment-${uniqueSuffix}${extname(file.originalname).toLowerCase()}`,
+          );
         },
       }),
-      fileFilter: (req, file, cb) => {
+      fileFilter: (_req, file, cb) => {
         const allowedTypes = /jpeg|jpg|png|gif/;
-        const extname = allowedTypes.test(extname(file.originalname).toLowerCase());
+        const isValidExt = allowedTypes.test(
+          extname(file.originalname).toLowerCase(),
+        );
         const mimetype = allowedTypes.test(file.mimetype);
 
-        if (mimetype && extname) {
+        if (mimetype && isValidExt) {
           return cb(null, true);
         }
-        cb(new BadRequestException('Only image files are allowed!'));
+        cb(new BadRequestException('Only image files are allowed!'), false);
       },
       limits: {
         fileSize: 5 * 1024 * 1024, // 5MB
@@ -56,7 +70,7 @@ export class PaymentsController {
     }),
   )
   async create(
-    @Req() req,
+    @Req() req: JwtRequest,
     @Body() createPaymentDto: CreatePaymentDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
@@ -64,7 +78,9 @@ export class PaymentsController {
       throw new BadRequestException('Proof image is required');
     }
 
-    createPaymentDto.nominal = parseFloat(createPaymentDto.nominal as any);
+    createPaymentDto.nominal = parseFloat(
+      createPaymentDto.nominal as unknown as string,
+    );
 
     const payment = await this.paymentsService.create(
       req.user.sub,
@@ -79,7 +95,7 @@ export class PaymentsController {
   }
 
   @Get()
-  findAll(@Req() req) {
+  findAll(@Req() req: JwtRequest) {
     return this.paymentsService.findAll(req.user.role, req.user.sub);
   }
 
@@ -93,7 +109,7 @@ export class PaymentsController {
   approve(
     @Param('id') id: string,
     @Body() approvePaymentDto: ApprovePaymentDto,
-    @Req() req,
+    @Req() req: JwtRequest,
   ) {
     return this.paymentsService.approve(id, approvePaymentDto, req.user.sub);
   }

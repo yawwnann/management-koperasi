@@ -3,10 +3,10 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
 import { ApproveWithdrawalDto } from './dto/approve-withdrawal.dto';
-import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class WithdrawalsService {
@@ -22,14 +22,16 @@ export class WithdrawalsService {
       throw new BadRequestException('Savings account not found');
     }
 
-    if (saving.total.lessThan(new Decimal(createWithdrawalDto.nominal))) {
+    if (
+      saving.total.lessThan(new Prisma.Decimal(createWithdrawalDto.nominal))
+    ) {
       throw new BadRequestException('Insufficient balance');
     }
 
     const withdrawal = await this.prisma.withdrawal.create({
       data: {
         userId,
-        nominal: new Decimal(createWithdrawalDto.nominal),
+        nominal: new Prisma.Decimal(createWithdrawalDto.nominal),
         reason: createWithdrawalDto.reason,
         status: 'PENDING',
       },
@@ -74,7 +76,11 @@ export class WithdrawalsService {
     });
   }
 
-  async approve(withdrawalId: string, approveWithdrawalDto: ApproveWithdrawalDto, adminId: string) {
+  async approve(
+    withdrawalId: string,
+    approveWithdrawalDto: ApproveWithdrawalDto,
+    adminId: string,
+  ) {
     const withdrawal = await this.prisma.withdrawal.findUnique({
       where: { id: withdrawalId },
       include: { user: true },
