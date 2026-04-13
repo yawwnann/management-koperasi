@@ -42,7 +42,8 @@ export function SavingsBreakdownChart({ data }: SavingsBreakdownChartProps) {
               fontSize: "20px",
               fontWeight: 600,
               formatter: (val) => {
-                return val;
+                const numVal = parseFloat(val.replace(/[^0-9.-]+/g, ""));
+                return `Rp ${numVal.toLocaleString("id-ID")}`;
               },
             },
             total: {

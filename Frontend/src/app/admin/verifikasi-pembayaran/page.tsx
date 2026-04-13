@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ProtectedRoute } from "@/components/protected-route";
 import { paymentsApi } from "@/lib/api";
 import { formatDate } from "@/lib/api-helpers";
-import type { Payment } from "@/types/api.types";
+import { Check, X, Clock, FileCheck, Filter, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 
 type StatusFilter = "ALL" | "PENDING" | "APPROVED" | "REJECTED";
 
@@ -18,15 +18,16 @@ export default function VerifikasiPembayaranPage() {
 }
 
 function VerifikasiPembayaranContent() {
-  const [payments, setPayments] = useState<Payment[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("PENDING");
-  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<any | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [page, setPage] = useState(1);
+  const [showProofImage, setShowProofImage] = useState(false);
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -38,7 +39,19 @@ function VerifikasiPembayaranContent() {
     try {
       const response = await paymentsApi.getList();
       if (response.success && Array.isArray(response.data)) {
-        setPayments(response.data);
+        const transformedPayments = response.data.map((payment: any) => ({
+          id: payment.id,
+          userId: payment.userId,
+          userName: payment.user?.name || "Unknown",
+          userAvatar: payment.user?.name?.charAt(0).toUpperCase() || "U",
+          nominal: Number(payment.nominal) || 0,
+          type: payment.description || "Simpanan Sukarela",
+          proofUrl: payment.proofImage,
+          status: payment.status,
+          createdAt: payment.createdAt,
+          updatedAt: payment.updatedAt,
+        }));
+        setPayments(transformedPayments);
       }
     } catch (error) {
       console.error("Failed to load payments:", error);
@@ -48,13 +61,13 @@ function VerifikasiPembayaranContent() {
     }
   }
 
-  const handleApprove = useCallback(async (payment: Payment) => {
+  const handleApprove = useCallback(async (payment: any) => {
     setSelectedPayment(payment);
     setRejectionReason("");
     setShowModal(true);
   }, []);
 
-  const handleReject = useCallback(async (payment: Payment) => {
+  const handleReject = useCallback(async (payment: any) => {
     setSelectedPayment(payment);
     setRejectionReason("");
     setShowModal(true);
@@ -102,55 +115,91 @@ function VerifikasiPembayaranContent() {
     }
   }, [selectedPayment, rejectionReason]);
 
-  const filteredPayments = statusFilter === "ALL"
-    ? payments
-    : payments.filter((p) => p.status === statusFilter);
-
+  const filteredPayments = statusFilter === "ALL" ? payments : payments.filter((p) => p.status === statusFilter);
   const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
   const paginatedPayments = filteredPayments.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string; className: string }> = {
-      APPROVED: { label: "Disetujui", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
-      PENDING: { label: "Menunggu", className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" },
-      REJECTED: { label: "Ditolak", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
-    };
-    const config = statusMap[status] || { label: status, className: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300" };
-    return (
-      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${config.className}`}>
-        {config.label}
-      </span>
-    );
+  const stats = [
+    {
+      label: "Total Pembayaran",
+      value: payments.length,
+      icon: <FileCheck className="h-5 w-5" />,
+      color: "bg-blue-500",
+      bgColor: "bg-blue-100 dark:bg-blue-900/30",
+      textColor: "text-blue-600 dark:text-blue-400",
+    },
+    {
+      label: "Menunggu Verifikasi",
+      value: payments.filter((p) => p.status === "PENDING").length,
+      icon: <Clock className="h-5 w-5" />,
+      color: "bg-yellow-500",
+      bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
+      textColor: "text-yellow-600 dark:text-yellow-400",
+    },
+    {
+      label: "Disetujui",
+      value: payments.filter((p) => p.status === "APPROVED").length,
+      icon: <Check className="h-5 w-5" />,
+      color: "bg-green-500",
+      bgColor: "bg-green-100 dark:bg-green-900/30",
+      textColor: "text-green-600 dark:text-green-400",
+    },
+    {
+      label: "Ditolak",
+      value: payments.filter((p) => p.status === "REJECTED").length,
+      icon: <X className="h-5 w-5" />,
+      color: "bg-red-500",
+      bgColor: "bg-red-100 dark:bg-red-900/30",
+      textColor: "text-red-600 dark:text-red-400",
+    },
+  ];
+
+  const tabs = [
+    { key: "ALL", label: "Semua", count: payments.length },
+    { key: "PENDING", label: "Menunggu", count: payments.filter((p) => p.status === "PENDING").length },
+    { key: "APPROVED", label: "Disetujui", count: payments.filter((p) => p.status === "APPROVED").length },
+    { key: "REJECTED", label: "Ditolak", count: payments.filter((p) => p.status === "REJECTED").length },
+  ];
+
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case "PENDING":
+        return { label: "Menunggu", bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-700 dark:text-yellow-400", dot: "bg-yellow-500" };
+      case "APPROVED":
+        return { label: "Disetujui", bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-700 dark:text-green-400", dot: "bg-green-500" };
+      case "REJECTED":
+        return { label: "Ditolak", bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-400", dot: "bg-red-500" };
+      default:
+        return { label: status, bg: "bg-gray-100 dark:bg-gray-700", text: "text-gray-700 dark:text-gray-300", dot: "bg-gray-500" };
+    }
   };
 
-  const getTypeBadge = (type: string) => {
-    const typeColors: Record<string, string> = {
-      "Simpanan Pokok": "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-      "Simpanan Wajib": "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-      "Simpanan Sukarela": "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-    };
-    const color = typeColors[type] || "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300";
-    return (
-      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${color}`}>
-        {type}
-      </span>
-    );
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case "Simpanan Pokok": return "text-blue-600 dark:text-blue-400";
+      case "Simpanan Wajib": return "text-purple-600 dark:text-purple-400";
+      case "Simpanan Sukarela": return "text-orange-600 dark:text-orange-400";
+      default: return "text-gray-600 dark:text-gray-400";
+    }
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
+    if (isNaN(amount) || amount === undefined || amount === null) return "Rp 0";
+    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount);
   };
 
   return (
-    <div className="mx-auto max-w-7xl">
-      {/* Breadcrumb - compact version without title */}
-      <div className="mb-6 flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-dark dark:text-white">Verifikasi Pembayaran</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Kelola dan verifikasi pembayaran anggota koperasi
+          </p>
+        </div>
         <nav className="flex items-center gap-2 text-sm">
-          <Link href="/" className="font-medium text-gray-500 hover:text-primary dark:text-gray-400">
+          <Link href="/" className="text-gray-500 hover:text-primary dark:text-gray-400">
             Dashboard
           </Link>
           <span className="text-gray-400">/</span>
@@ -158,194 +207,161 @@ function VerifikasiPembayaranContent() {
         </nav>
       </div>
 
-      {/* Stats Cards */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-boxdark">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Total Pembayaran</p>
-          <p className="text-2xl font-bold text-dark dark:text-white">{payments.length}</p>
-        </div>
-        <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-boxdark">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Menunggu</p>
-          <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-            {payments.filter((p) => p.status === "PENDING").length}
-          </p>
-        </div>
-        <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-boxdark">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Disetujui</p>
-          <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-            {payments.filter((p) => p.status === "APPROVED").length}
-          </p>
-        </div>
-        <div className="rounded-lg bg-white p-4 shadow-sm dark:bg-boxdark">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Ditolak</p>
-          <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-            {payments.filter((p) => p.status === "REJECTED").length}
-          </p>
-        </div>
-      </div>
-
-      {/* Filter */}
+      {/* Alert Message */}
       {message && (
-        <div
-          className={`mb-4 rounded-md border p-4 ${
-            message.type === "success"
-              ? "border-green-300 bg-green-50 text-green-700 dark:border-green-600 dark:bg-green-900/20 dark:text-green-400"
-              : "border-red-300 bg-red-50 text-red-700 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400"
-          }`}
-        >
-          {message.text}
+        <div className={`flex items-center gap-3 rounded-lg border p-4 ${
+          message.type === "success"
+            ? "border-green-300 bg-green-50 text-green-700 dark:border-green-600 dark:bg-green-900/20 dark:text-green-400"
+            : "border-red-300 bg-red-50 text-red-700 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400"
+        }`}>
+          <span className="text-sm font-medium">{message.text}</span>
+          <button onClick={() => setMessage(null)} className="ml-auto text-current opacity-60 hover:opacity-100">
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-dark dark:text-white">Daftar Pembayaran</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Total: {payments.length} pembayaran
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value as StatusFilter);
-              setPage(1);
-            }}
-            className="rounded-lg border border-stroke bg-white px-4 py-2 text-sm text-dark outline-none transition focus:border-primary dark:border-strokedark dark:text-white dark:focus:border-primary"
-          >
-            <option value="ALL">Semua</option>
-            <option value="PENDING">Menunggu</option>
-            <option value="APPROVED">Disetujui</option>
-            <option value="REJECTED">Ditolak</option>
-          </select>
-        </div>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <div key={stat.label} className="rounded-xl border border-stroke bg-white p-5 shadow-sm dark:border-strokedark dark:bg-boxdark">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{stat.label}</p>
+                <p className={`mt-2 text-3xl font-bold ${stat.textColor}`}>{stat.value}</p>
+              </div>
+              <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.bgColor} ${stat.textColor}`}>
+                {stat.icon}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Stats Cards */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <div className="rounded-sm border border-stroke bg-white p-4 shadow-default dark:border-strokedark dark:bg-boxdark">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Total</p>
-          <p className="mt-1 text-2xl font-bold text-dark dark:text-white">{payments.length}</p>
+      {/* Tabs & Table */}
+      <div className="rounded-xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark">
+        {/* Tabs */}
+        <div className="border-b border-stroke px-6 pt-6 dark:border-strokedark">
+          <div className="flex flex-wrap gap-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => { setStatusFilter(tab.key as StatusFilter); setPage(1); }}
+                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
+                  statusFilter === tab.key
+                    ? "bg-primary text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                }`}
+              >
+                {tab.label}
+                <span className={`rounded-full px-2 py-0.5 text-xs ${
+                  statusFilter === tab.key ? "bg-white/20 text-white" : "bg-gray-200 text-gray-600 dark:bg-gray-600 dark:text-gray-300"
+                }`}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="rounded-sm border border-yellow-300 bg-yellow-50 p-4 shadow-default dark:border-yellow-600 dark:bg-yellow-900/20">
-          <p className="text-sm text-yellow-700 dark:text-yellow-400">Menunggu</p>
-          <p className="mt-1 text-2xl font-bold text-yellow-800 dark:text-yellow-300">
-            {payments.filter((p) => p.status === "PENDING").length}
-          </p>
-        </div>
-        <div className="rounded-sm border border-green-300 bg-green-50 p-4 shadow-default dark:border-green-600 dark:bg-green-900/20">
-          <p className="text-sm text-green-700 dark:text-green-400">Disetujui</p>
-          <p className="mt-1 text-2xl font-bold text-green-800 dark:text-green-300">
-            {payments.filter((p) => p.status === "APPROVED").length}
-          </p>
-        </div>
-        <div className="rounded-sm border border-red-300 bg-red-50 p-4 shadow-default dark:border-red-600 dark:bg-red-900/20">
-          <p className="text-sm text-red-700 dark:text-red-400">Ditolak</p>
-          <p className="mt-1 text-2xl font-bold text-red-800 dark:text-red-300">
-            {payments.filter((p) => p.status === "REJECTED").length}
-          </p>
-        </div>
-      </div>
 
-      {/* Table */}
-      <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+        {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full table-auto">
+          <table className="w-full">
             <thead>
-              <tr className="border-b border-stroke bg-gray-50 dark:border-strokedark dark:bg-gray-800">
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  No
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Anggota
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Jenis
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Jumlah
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Tanggal
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Aksi
-                </th>
+              <tr className="border-b border-stroke dark:border-strokedark">
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Anggota</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Jenis</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Jumlah</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Tanggal</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Status</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Aksi</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-stroke dark:divide-strokedark">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                    <div className="flex items-center justify-center">
-                      <svg className="mr-2 h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
+                  <td colSpan={6} className="px-6 py-12 text-center">
+                    <div className="flex items-center justify-center gap-2 text-gray-500 dark:text-gray-400">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                       Memuat data...
                     </div>
                   </td>
                 </tr>
               ) : paginatedPayments.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                    Tidak ada data pembayaran.
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                    <Filter className="mx-auto mb-2 h-8 w-8 opacity-40" />
+                    <p className="font-medium">Tidak ada data pembayaran</p>
+                    <p className="text-sm">Belum ada pembayaran dengan filter ini</p>
                   </td>
                 </tr>
               ) : (
-                paginatedPayments.map((payment, index) => (
-                  <tr
-                    key={payment.id}
-                    className="border-b border-stroke transition hover:bg-gray-50 dark:border-strokedark dark:hover:bg-gray-700/50"
-                  >
-                    <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                      {(page - 1) * itemsPerPage + index + 1}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium text-dark dark:text-white">
-                      {payment.userName}
-                    </td>
-                    <td className="px-4 py-3">
-                      {getTypeBadge(payment.type)}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-semibold text-dark dark:text-white">
-                      {formatCurrency(payment.amount)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                      {formatDate(payment.createdAt, "full")}
-                    </td>
-                    <td className="px-4 py-3">
-                      {getStatusBadge(payment.status)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-2">
-                        {payment.status === "PENDING" ? (
-                          <>
-                            <button
-                              onClick={() => handleApprove(payment)}
-                              className="rounded-md bg-green-500 px-3 py-1 text-xs font-medium text-white transition hover:bg-green-600"
-                            >
-                              Setujui
-                            </button>
-                            <button
-                              onClick={() => handleReject(payment)}
-                              className="rounded-md bg-red-500 px-3 py-1 text-xs font-medium text-white transition hover:bg-red-600"
-                            >
-                              Tolak
-                            </button>
-                          </>
-                        ) : (
-                          <span className="text-xs text-gray-400">
-                            {payment.status === "APPROVED" ? "Sudah disetujui" : "Sudah ditolak"}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                paginatedPayments.map((payment) => {
+                  const statusConfig = getStatusConfig(payment.status);
+                  return (
+                    <tr key={payment.id} className="transition hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                            {payment.userAvatar}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-dark dark:text-white">{payment.userName}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">ID: {payment.id.slice(0, 8)}...</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`text-sm font-medium ${getTypeColor(payment.type)}`}>{payment.type}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm font-semibold text-dark dark:text-white">{formatCurrency(payment.nominal)}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">{formatDate(payment.createdAt, "full")}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${statusConfig.dot}`} />
+                          {statusConfig.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          {payment.status === "PENDING" ? (
+                            <>
+                              <button
+                                onClick={() => setShowProofImage(!showProofImage)}
+                                className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                                title="Lihat Bukti"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleApprove(payment)}
+                                className="flex items-center gap-1.5 rounded-lg bg-green-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-green-600"
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                                Setujui
+                              </button>
+                              <button
+                                onClick={() => handleReject(payment)}
+                                className="flex items-center gap-1.5 rounded-lg bg-red-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-red-600"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                                Tolak
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-xs text-gray-400">
+                              {payment.status === "APPROVED" ? "Sudah disetujui" : "Sudah ditolak"}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -353,37 +369,41 @@ function VerifikasiPembayaranContent() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-stroke px-4 py-3 dark:border-strokedark">
+          <div className="flex items-center justify-between border-t border-stroke px-6 py-4 dark:border-strokedark">
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Halaman {page} dari {totalPages}
+              Menampilkan {(page - 1) * itemsPerPage + 1}–{Math.min(page * itemsPerPage, filteredPayments.length)} dari {filteredPayments.length} data
             </p>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="rounded-md border border-stroke px-3 py-1 text-sm text-gray-600 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-strokedark dark:text-gray-400 dark:hover:bg-gray-700"
+                className="rounded-lg p-2 text-gray-600 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:bg-gray-700"
               >
-                Sebelumnya
+                <ChevronLeft className="h-4 w-4" />
               </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPage(p)}
-                  className={`rounded-md border px-3 py-1 text-sm transition ${
-                    p === page
-                      ? "border-primary bg-primary text-white"
-                      : "border-stroke text-gray-600 hover:bg-gray-100 dark:border-strokedark dark:text-gray-400 dark:hover:bg-gray-700"
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const p = Math.max(1, Math.min(page - 2, totalPages - 4)) + i;
+                if (p > totalPages) return null;
+                return (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm font-medium transition ${
+                      p === page
+                        ? "bg-primary text-white"
+                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="rounded-md border border-stroke px-3 py-1 text-sm text-gray-600 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-strokedark dark:text-gray-400 dark:hover:bg-gray-700"
+                className="rounded-lg p-2 text-gray-600 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:bg-gray-700"
               >
-                Selanjutnya
+                <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -392,102 +412,93 @@ function VerifikasiPembayaranContent() {
 
       {/* Verification Modal */}
       {showModal && selectedPayment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-boxdark">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-dark dark:text-white">Verifikasi Pembayaran</h3>
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  setSelectedPayment(null);
-                  setRejectionReason("");
-                }}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Payment Details */}
-            <div className="mb-4 rounded-md bg-gray-50 p-4 dark:bg-gray-800">
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Anggota:</span>
-                  <span className="font-medium text-dark dark:text-white">{selectedPayment.userName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Jenis:</span>
-                  <span className="font-medium text-dark dark:text-white">{selectedPayment.type}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Jumlah:</span>
-                  <span className="font-semibold text-dark dark:text-white">
-                    {formatCurrency(selectedPayment.amount)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Tanggal:</span>
-                  <span className="text-dark dark:text-white">{formatDate(selectedPayment.createdAt, "full")}</span>
-                </div>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-boxdark">
+            {/* Modal Header */}
+            <div className="border-b border-stroke bg-gray-50 px-6 py-4 dark:border-strokedark dark:bg-gray-800">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-dark dark:text-white">Verifikasi Pembayaran</h3>
+                <button
+                  onClick={() => { setShowModal(false); setSelectedPayment(null); setRejectionReason(""); }}
+                  className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
             </div>
 
-            {/* Proof Image */}
-            {selectedPayment.proofUrl && (
-              <div className="mb-4">
-                <label className="mb-2 block text-sm font-medium text-dark dark:text-white">Bukti Pembayaran</label>
-                <div className="rounded-md border border-stroke p-2 dark:border-strokedark">
-                  <img
-                    src={selectedPayment.proofUrl}
-                    alt="Bukti pembayaran"
-                    className="max-h-64 w-full rounded object-contain"
-                  />
+            {/* Modal Body */}
+            <div className="p-6">
+              {/* Payment Info Card */}
+              <div className="mb-6 rounded-xl border border-stroke bg-gray-50 p-4 dark:border-strokedark dark:bg-gray-800/50">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-500 dark:text-gray-400">Anggota</p>
+                    <p className="mt-1 font-medium text-dark dark:text-white">{selectedPayment.userName}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 dark:text-gray-400">Jenis</p>
+                    <p className={`mt-1 font-medium ${getTypeColor(selectedPayment.type)}`}>{selectedPayment.type}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 dark:text-gray-400">Jumlah</p>
+                    <p className="mt-1 text-lg font-bold text-dark dark:text-white">{formatCurrency(selectedPayment.nominal)}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 dark:text-gray-400">Tanggal</p>
+                    <p className="mt-1 font-medium text-dark dark:text-white">{formatDate(selectedPayment.createdAt, "full")}</p>
+                  </div>
                 </div>
               </div>
-            )}
 
-            {/* Rejection Reason */}
-            <div className="mb-4">
-              <label className="mb-2 block text-sm font-medium text-dark dark:text-white" htmlFor="rejectionReason">
-                Alasan Penolakan (Opsional)
-              </label>
-              <textarea
-                id="rejectionReason"
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="Masukkan alasan penolakan..."
-                rows={3}
-                className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none transition focus:border-primary dark:border-strokedark dark:text-white dark:focus:border-primary"
-              />
+              {/* Proof Image */}
+              {selectedPayment.proofUrl && (
+                <div className="mb-6">
+                  <p className="mb-2 text-sm font-medium text-dark dark:text-white">Bukti Pembayaran</p>
+                  <div className="overflow-hidden rounded-xl border border-stroke dark:border-strokedark">
+                    <img src={selectedPayment.proofUrl} alt="Bukti pembayaran" className="h-48 w-full object-cover" />
+                  </div>
+                </div>
+              )}
+
+              {/* Rejection Reason */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
+                  Alasan Penolakan <span className="text-gray-400">(opsional)</span>
+                </label>
+                <textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Masukkan alasan penolakan..."
+                  rows={3}
+                  className="w-full rounded-xl border border-stroke bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-primary dark:border-strokedark dark:bg-gray-800 dark:text-white dark:focus:border-primary"
+                />
+              </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-3">
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-3 border-t border-stroke bg-gray-50 px-6 py-4 dark:border-strokedark dark:bg-gray-800">
               <button
-                onClick={() => {
-                  setShowModal(false);
-                  setSelectedPayment(null);
-                  setRejectionReason("");
-                }}
-                className="rounded-lg border border-stroke px-4 py-2 font-medium text-gray-600 transition hover:bg-gray-100 dark:border-strokedark dark:text-gray-400 dark:hover:bg-gray-700"
+                onClick={() => { setShowModal(false); setSelectedPayment(null); setRejectionReason(""); }}
+                className="rounded-xl px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700"
                 disabled={processing}
               >
                 Batal
               </button>
               <button
                 onClick={handleSubmitVerification}
-                className="rounded-lg bg-green-500 px-4 py-2 font-medium text-white transition hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-70"
+                className="flex items-center gap-2 rounded-xl bg-green-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={processing}
               >
+                <Check className="h-4 w-4" />
                 {processing ? "Memproses..." : "Setujui"}
               </button>
               <button
                 onClick={handleRejectSubmit}
-                className="rounded-lg bg-red-500 px-4 py-2 font-medium text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-70"
+                className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={processing}
               >
+                <X className="h-4 w-4" />
                 {processing ? "Memproses..." : "Tolak"}
               </button>
             </div>

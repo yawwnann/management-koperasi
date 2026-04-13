@@ -7,10 +7,16 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { ApprovePaymentDto } from './dto/approve-payment.dto';
+import { EmailService } from '../email/email.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService,
+    private notificationsGateway: NotificationsGateway,
+  ) {}
 
   async create(
     userId: string,
@@ -25,7 +31,39 @@ export class PaymentsService {
         description: createPaymentDto.description,
         status: 'PENDING',
       },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
+
+    // Send notification to admins via WebSocket
+    this.notificationsGateway.broadcastNewPayment({
+      id: payment.id,
+      userId: payment.userId,
+      userName: payment.user.name,
+      amount: Number(payment.nominal),
+      status: payment.status,
+    });
+
+    // Send email notification to admins (fetch admin emails from users table)
+    const admins = await this.prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { email: true },
+    });
+
+    for (const admin of admins) {
+      this.emailService.sendAdminPaymentNotification(
+        admin.email,
+        payment.user.name,
+        Number(payment.nominal),
+      );
+    }
 
     return payment;
   }
@@ -118,6 +156,22 @@ export class PaymentsService {
         },
       });
     }
+
+    // Send notification to the user via WebSocket
+    this.notificationsGateway.broadcastPaymentUpdate(updatedPayment.userId, {
+      id: updatedPayment.id,
+      userName: updatedPayment.user.name,
+      amount: Number(updatedPayment.nominal),
+      status: updatedPayment.status,
+    });
+
+    // Send email notification to the user
+    this.emailService.sendPaymentNotification(
+      updatedPayment.user.email,
+      updatedPayment.user.name,
+      Number(updatedPayment.nominal),
+      updatedPayment.status as 'PENDING' | 'APPROVED' | 'REJECTED',
+    );
 
     return updatedPayment;
   }

@@ -17,14 +17,21 @@ import { LogOutIcon, SettingsIcon, UserIcon } from "./icons";
 
 export function UserInfo() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
+    setUser(getCurrentUser());
 
-  const user = isMounted ? getCurrentUser() : null;
+    const handleProfileUpdated = () => {
+      setUser(getCurrentUser());
+    };
+
+    window.addEventListener("profile-updated", handleProfileUpdated);
+    return () => {
+      window.removeEventListener("profile-updated", handleProfileUpdated);
+    };
+  }, []);
 
   const USER = {
     name: user?.name || "User",

@@ -1,12 +1,22 @@
 "use client";
 
-import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import Image from "next/image";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import { CameraIcon } from "./_components/icons";
-import { SocialAccounts } from "./_components/social-accounts";
 import { profileApi } from "@/lib/api";
-import { getCurrentUser } from "@/lib/api-helpers";
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  User,
+  Shield,
+  Edit2,
+  Save,
+  X,
+} from "lucide-react";
 
 interface ProfileData {
   id: string;
@@ -14,7 +24,7 @@ interface ProfileData {
   email: string;
   role: string;
   angkatan: string;
-  profilePhoto: string;
+  photo?: string;
   coverPhoto: string;
   bio: string;
   phone?: string;
@@ -22,12 +32,25 @@ interface ProfileData {
   joinDate: string;
 }
 
-export default function Page() {
+export default function ProfilePage() {
   const [data, setData] = useState<ProfileData | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
+    // Check if user is authenticated
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+    if (!token) {
+      router.push("/auth/sign-in");
+      return;
+    }
     loadProfile();
   }, []);
 
@@ -37,35 +60,66 @@ export default function Page() {
       const response = await profileApi.getMyProfile();
       if (response.success && response.data) {
         setData(response.data as ProfileData);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("current_user", JSON.stringify(response.data));
+          window.dispatchEvent(new Event("profile-updated"));
+        }
+      } else {
+        // Token might be invalid or expired - redirect to login
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("auth_token");
+          localStorage.removeItem("current_user");
+        }
+        router.push("/auth/sign-in");
+        return;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to load profile:", error);
+      const errorMsg = error?.message?.toLowerCase() || "";
+
+      // Check if it's an authentication error
+      if (
+        errorMsg.includes("authentication") ||
+        errorMsg.includes("unauthorized") ||
+        errorMsg.includes("401") ||
+        errorMsg.includes("token") ||
+        errorMsg.includes("missing")
+      ) {
+        // Clear invalid tokens and redirect to login
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("auth_token");
+          localStorage.removeItem("current_user");
+        }
+        router.push("/auth/sign-in");
+        return;
+      }
+
       setMessage({ type: "error", text: "Gagal memuat data profile." });
     } finally {
       setLoading(false);
     }
   }
 
-  const handleChange = (e: any) => {
-    if (e.target.name === "profilePhoto") {
-      const file = e.target?.files[0];
-
-      setData((prev) => ({
-        ...prev!,
-        profilePhoto: file && URL.createObjectURL(file),
-      }));
-    } else if (e.target.name === "coverPhoto") {
-      const file = e.target?.files[0];
-
-      setData((prev) => ({
-        ...prev!,
-        coverPhoto: file && URL.createObjectURL(file),
-      }));
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    if (!data) return;
+    if (e.target.name === "photo" || e.target.name === "coverPhoto") {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        if (e.target.name === "photo") {
+          setPhotoFile(file);
+        }
+        setData({
+          ...data,
+          [e.target.name]: URL.createObjectURL(file),
+        });
+      }
     } else {
-      setData((prev) => ({
-        ...prev!,
+      setData({
+        ...data,
         [e.target.name]: e.target.value,
-      }));
+      });
     }
   };
 
@@ -80,27 +134,38 @@ export default function Page() {
         address: data.address,
       });
 
-      if (response.success) {
+      let photoResponse;
+      if (photoFile) {
+        const formData = new FormData();
+        formData.append("photo", photoFile);
+        photoResponse = await profileApi.updateProfilePhoto(formData);
+
+        if (photoResponse.success) {
+          setPhotoFile(null); // Reset because it's uploaded
+        }
+      }
+
+      if (response.success || photoResponse?.success) {
         setMessage({ type: "success", text: "Profile berhasil diperbarui." });
+        setIsEditing(false);
+        // Refresh profile data to get the new photo URL from server
+        loadProfile();
         setTimeout(() => setMessage(null), 3000);
       }
     } catch (error: any) {
-      setMessage({ type: "error", text: error.message || "Gagal memperbarui profile." });
+      setMessage({
+        type: "error",
+        text: error.message || "Gagal memperbarui profile.",
+      });
     }
   };
 
   if (loading) {
     return (
-      <div className="mx-auto w-full max-w-[970px]">
-        <Breadcrumb pageName="Profile" />
-        <div className="flex items-center justify-center rounded-[10px] bg-white p-12 shadow-1 dark:bg-gray-dark">
-          <div className="text-center">
-            <svg className="mx-auto h-12 w-12 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            <p className="mt-4 text-gray-500 dark:text-gray-400">Memuat data profile...</p>
-          </div>
+      <div className="flex items-center justify-center py-12">
+        <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          Memuat data profile...
         </div>
       </div>
     );
@@ -108,11 +173,8 @@ export default function Page() {
 
   if (!data) {
     return (
-      <div className="mx-auto w-full max-w-[970px]">
-        <Breadcrumb pageName="Profile" />
-        <div className="rounded-[10px] bg-white p-12 text-center shadow-1 dark:bg-gray-dark">
-          <p className="text-red-500">Gagal memuat data profile.</p>
-        </div>
+      <div className="rounded-xl border border-stroke bg-white p-12 text-center shadow-sm dark:border-strokedark dark:bg-boxdark">
+        <p className="text-red-500">Gagal memuat data profile.</p>
       </div>
     );
   }
@@ -125,145 +187,226 @@ export default function Page() {
     });
   };
 
-  return (
-    <div className="mx-auto w-full max-w-[970px]">
-      <Breadcrumb pageName="Profile" />
+  const infoItems = [
+    { icon: <Mail className="h-4 w-4" />, label: "Email", value: data.email },
+    {
+      icon: <Calendar className="h-4 w-4" />,
+      label: "Bergabung",
+      value: formatDate(data.joinDate),
+    },
+    ...(data.phone
+      ? [
+          {
+            icon: <Phone className="h-4 w-4" />,
+            label: "Telepon",
+            value: data.phone,
+          },
+        ]
+      : []),
+    ...(data.address
+      ? [
+          {
+            icon: <MapPin className="h-4 w-4" />,
+            label: "Alamat",
+            value: data.address,
+          },
+        ]
+      : []),
+  ];
 
-      {/* Message */}
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-dark dark:text-white">
+            Profile
+          </h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Kelola informasi profil dan akun Anda
+          </p>
+        </div>
+        <nav className="flex items-center gap-2 text-sm">
+          <Link
+            href="/"
+            className="text-gray-500 hover:text-primary dark:text-gray-400"
+          >
+            Dashboard
+          </Link>
+          <span className="text-gray-400">/</span>
+          <span className="font-medium text-primary">Profile</span>
+        </nav>
+      </div>
+
+      {/* Alert Message */}
       {message && (
         <div
-          className={`mb-4 rounded-md border p-4 ${
+          className={`flex items-center gap-3 rounded-lg border p-4 ${
             message.type === "success"
               ? "border-green-300 bg-green-50 text-green-700 dark:border-green-600 dark:bg-green-900/20 dark:text-green-400"
               : "border-red-300 bg-red-50 text-red-700 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400"
           }`}
         >
-          {message.text}
+          <span className="text-sm font-medium">{message.text}</span>
+          <button
+            onClick={() => setMessage(null)}
+            className="ml-auto text-current opacity-60 hover:opacity-100"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
-      <div className="overflow-hidden rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
-        <div className="relative z-20 h-35 md:h-65">
-          <Image
-            src={data?.coverPhoto}
-            alt="profile cover"
-            className="h-full w-full rounded-tl-[10px] rounded-tr-[10px] object-cover object-center"
-            width={970}
-            height={260}
-            style={{
-              width: "auto",
-              height: "auto",
-            }}
-          />
-          <div className="absolute bottom-1 right-1 z-10 xsm:bottom-4 xsm:right-4">
-            <label
-              htmlFor="cover"
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary px-[15px] py-[5px] text-body-sm font-medium text-white hover:bg-opacity-90"
-            >
+      <div className="rounded-xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark">
+        {/* Cover Photo */}
+        <div className="relative h-48 overflow-hidden rounded-t-xl bg-gray-200 dark:bg-gray-700 sm:h-56">
+          {data.coverPhoto ? (
+            <Image
+              src={data.coverPhoto}
+              alt="Cover"
+              fill
+              className="object-cover"
+            />
+          ) : null}
+          {isEditing && (
+            <label className="absolute bottom-4 right-4 flex cursor-pointer items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium text-dark shadow-md hover:bg-gray-50 dark:bg-gray-800 dark:text-white">
+              <CameraIcon />
+              <span>Ubah Cover</span>
               <input
                 type="file"
                 name="coverPhoto"
-                id="coverPhoto"
                 className="sr-only"
                 onChange={handleChange}
                 accept="image/png, image/jpg, image/jpeg"
               />
-
-              <CameraIcon />
-
-              <span>Edit</span>
             </label>
-          </div>
+          )}
         </div>
-        <div className="px-4 pb-6 text-center lg:pb-8 xl:pb-11.5">
-          <div className="relative z-30 mx-auto -mt-22 h-30 w-full max-w-30 rounded-full bg-white/20 p-1 backdrop-blur sm:h-44 sm:max-w-[176px] sm:p-3">
-            <div className="relative drop-shadow-2">
-              {data?.profilePhoto && (
-                <>
+
+        <div className="px-6 pb-8">
+          {/* Profile Photo & Header */}
+          <div className="relative flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:gap-6">
+            <div className="relative -mt-16">
+              <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-gray-100 shadow-md dark:border-gray-900 dark:bg-gray-700 sm:h-32 sm:w-32">
+                {data.photo ? (
                   <Image
-                    src={data?.profilePhoto}
-                    width={160}
-                    height={160}
-                    className="overflow-hidden rounded-full"
-                    alt="profile"
+                    src={data.photo}
+                    alt={data.name}
+                    width={128}
+                    height={128}
+                    className="h-full w-full object-cover"
                   />
+                ) : (
+                  <User className="h-12 w-12 text-gray-400" />
+                )}
+              </div>
+              {isEditing && (
+                <label className="absolute bottom-1 right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-md hover:bg-primary/90">
+                  <CameraIcon className="h-4 w-4" />
+                  <input
+                    type="file"
+                    name="photo"
+                    className="sr-only"
+                    onChange={handleChange}
+                    accept="image/png, image/jpg, image/jpeg"
+                  />
+                </label>
+              )}
+            </div>
 
-                  <label
-                    htmlFor="profilePhoto"
-                    className="absolute bottom-0 right-0 flex size-8.5 cursor-pointer items-center justify-center rounded-full bg-primary text-white hover:bg-opacity-90 sm:bottom-2 sm:right-2"
+            <div className="flex-1">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-dark dark:text-white">
+                  {data.name}
+                </h2>
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    data.role === "ADMIN"
+                      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                      : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                  }`}
+                >
+                  <Shield className="h-3 w-3" />
+                  {data.role === "ADMIN" ? "Administrator" : "Anggota"}
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                Angkatan {data.angkatan} • Member sejak{" "}
+                {formatDate(data.joinDate)}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {isEditing ? (
+                <>
+                  <button
+                    onClick={handleSave}
+                    className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90"
                   >
-                    <CameraIcon />
-
-                    <input
-                      type="file"
-                      name="profilePhoto"
-                      id="profilePhoto"
-                      className="sr-only"
-                      onChange={handleChange}
-                      accept="image/png, image/jpg, image/jpeg"
-                    />
-                  </label>
+                    <Save className="h-4 w-4" />
+                    Simpan
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditing(false);
+                      loadProfile();
+                    }}
+                    className="rounded-lg border border-stroke px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 dark:border-strokedark dark:text-gray-400 dark:hover:bg-gray-700"
+                  >
+                    Batal
+                  </button>
                 </>
+              ) : (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center gap-2 rounded-lg border border-stroke px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 dark:border-strokedark dark:text-gray-400 dark:hover:bg-gray-700"
+                >
+                  <Edit2 className="h-4 w-4" />
+                  Edit Profile
+                </button>
               )}
             </div>
           </div>
-          <div className="mt-4">
-            <h3 className="mb-1 text-heading-6 font-bold text-dark dark:text-white">
-              {data?.name}
-            </h3>
-            <p className="font-medium">
-              {data.role === "ADMIN" ? "Administrator" : "Anggota"} • Angkatan {data.angkatan}
-            </p>
 
-            <div className="mx-auto mb-5.5 mt-5 max-w-[500px] rounded-[5px] border border-stroke px-6 py-4 shadow-1 dark:border-dark-3 dark:bg-dark-2 dark:shadow-card">
-              <div className="grid grid-cols-2 gap-4 text-left">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
-                  <p className="font-medium text-dark dark:text-white">{data.email}</p>
+          {/* Info Grid */}
+          <div className="mt-8 grid grid-cols-1 gap-6 border-t border-stroke pt-8 dark:border-strokedark sm:grid-cols-2 lg:grid-cols-4">
+            {infoItems.map((item) => (
+              <div key={item.label} className="flex items-start gap-3">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                  {item.icon}
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Bergabung Sejak</p>
-                  <p className="font-medium text-dark dark:text-white">{formatDate(data.joinDate)}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {item.label}
+                  </p>
+                  <p className="mt-0.5 text-sm font-medium text-dark dark:text-white">
+                    {item.value}
+                  </p>
                 </div>
-                {data.phone && (
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Telepon</p>
-                    <p className="font-medium text-dark dark:text-white">{data.phone}</p>
-                  </div>
-                )}
-                {data.address && (
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Alamat</p>
-                    <p className="font-medium text-dark dark:text-white">{data.address}</p>
-                  </div>
-                )}
               </div>
-            </div>
+            ))}
+          </div>
 
-            <div className="mx-auto max-w-[720px]">
-              <h4 className="font-medium text-dark dark:text-white">Tentang Saya</h4>
+          {/* Bio Section */}
+          <div className="mt-8 border-t border-stroke pt-8 dark:border-strokedark">
+            <h3 className="mb-4 text-sm font-semibold text-dark dark:text-white">
+              Tentang Saya
+            </h3>
+            {isEditing ? (
               <textarea
                 name="bio"
                 value={data.bio}
                 onChange={handleChange}
-                className="mt-4 w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-dark outline-none transition focus:border-primary dark:border-strokedark dark:text-white dark:focus:border-primary"
+                className="w-full rounded-lg border border-stroke bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-primary dark:border-strokedark dark:bg-gray-800 dark:text-white dark:focus:border-primary"
                 rows={4}
                 placeholder="Ceritakan tentang diri Anda..."
               />
-            </div>
-
-            <div className="mt-6 flex justify-center gap-3">
-              <button
-                onClick={handleSave}
-                className="rounded-lg bg-primary px-6 py-2 font-medium text-white transition hover:bg-primary/90"
-              >
-                Simpan Perubahan
-              </button>
-            </div>
-
-            <div className="mt-8">
-              <SocialAccounts />
-            </div>
+            ) : (
+              <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+                {data.bio ||
+                  "Belum ada deskripsi. Klik Edit Profile untuk menambahkan."}
+              </p>
+            )}
           </div>
         </div>
       </div>

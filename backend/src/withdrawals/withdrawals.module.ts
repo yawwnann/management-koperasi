@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
 import { WithdrawalsService } from './withdrawals.service';
 import { WithdrawalsController } from './withdrawals.controller';
+import { EmailModule } from '../email/email.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
+  imports: [EmailModule, NotificationsModule],
   controllers: [WithdrawalsController],
   providers: [WithdrawalsService],
   exports: [WithdrawalsService],

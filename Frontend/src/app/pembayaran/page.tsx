@@ -79,22 +79,13 @@ function PembayaranContent() {
       setLoading(true);
 
       try {
-        const reader = new FileReader();
-        const base64Promise = new Promise<string>((resolve, reject) => {
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(form.proofFile!);
-        });
-        const proofBase64 = await base64Promise;
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append("proofImage", form.proofFile!);
+        formData.append("nominal", form.amount.replace(/\./g, ""));
+        formData.append("description", form.paymentType);
 
-        const payload = {
-          type: form.paymentType,
-          amount: parseInt(form.amount.replace(/\./g, ""), 10),
-          proof: proofBase64,
-          fileName: form.proofFile.name,
-        };
-
-        await paymentsApi.create(payload);
+        await paymentsApi.create(formData);
 
         setMessage({ type: "success", text: "Pembayaran berhasil dikirim! Menunggu konfirmasi admin." });
         setForm({ paymentType: "", amount: "", proofFile: null });

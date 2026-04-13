@@ -55,6 +55,27 @@ const createMockErrorResponse = (
 });
 
 /**
+ * Helper to wrap backend responses in ApiResponse format
+ * Automatically unwraps if backend already wrapped the response
+ */
+const wrapBackendResponse = (data: any, message?: string): ApiResponse => {
+  // If backend already wrapped response, unwrap it
+  if (data && data.success && data.data !== undefined) {
+    return {
+      success: true,
+      data: data.data,
+      message: data.message || message,
+    };
+  }
+
+  return {
+    success: true,
+    data,
+    message,
+  };
+};
+
+/**
  * Gets auth token from headers or storage
  */
 const getAuthToken = (): string | null => {
@@ -67,10 +88,15 @@ const getAuthToken = (): string | null => {
 /**
  * Creates headers for real API requests
  */
-const createHeaders = (token?: string | null): HeadersInit => {
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-  };
+const createHeaders = (
+  token?: string | null,
+  isFormData?: boolean,
+): HeadersInit => {
+  const headers: HeadersInit = {};
+
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
@@ -98,6 +124,7 @@ async function handleAuthLogin(credentials: {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: "POST",
     headers: createHeaders(),
+    credentials: "include", // Include cookies
     body: JSON.stringify(credentials),
   });
 
@@ -106,7 +133,14 @@ async function handleAuthLogin(credentials: {
     throw new Error(error.message || "Login failed");
   }
 
-  return response.json();
+  const data = await response.json();
+
+  // Wrap backend response in ApiResponse format
+  return {
+    success: true,
+    data: data,
+    message: "Login successful",
+  };
 }
 
 /**
@@ -126,6 +160,7 @@ async function handleAuthMe(): Promise<ApiResponse> {
   const response = await fetch(`${API_BASE_URL}/auth/me`, {
     method: "GET",
     headers: createHeaders(token),
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -133,7 +168,154 @@ async function handleAuthMe(): Promise<ApiResponse> {
     throw new Error(error.message || "Failed to get user data");
   }
 
-  return response.json();
+  const data = await response.json();
+
+  // Wrap backend response in ApiResponse format
+  return {
+    success: true,
+    data: data,
+  };
+}
+
+/**
+ * Handles refresh token
+ */
+async function handleAuthRefresh(): Promise<ApiResponse> {
+  if (USE_MOCK) {
+    await delay();
+    // Mock: generate new token and return it
+    const newToken = `mock_refresh_token_${Date.now()}`;
+    const newAccessToken = `mock_access_token_${Date.now()}`;
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("auth_token", newAccessToken);
+    }
+
+    return createMockResponse(
+      { access_token: newAccessToken },
+      "Token refreshed successfully",
+    );
+  }
+
+  // Real API call - backend will handle cookie setting
+  const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+    method: "POST",
+    headers: {
+      ...createHeaders(),
+      "Content-Type": "application/json",
+    },
+    credentials: "include", // Include cookies
+    body: JSON.stringify({}),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Token refresh failed");
+  }
+
+  const data = await response.json();
+  return wrapBackendResponse(data, "Token refreshed successfully");
+}
+
+/**
+ * Handles logout
+ */
+async function handleAuthLogout(): Promise<ApiResponse> {
+  if (USE_MOCK) {
+    await delay();
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("current_user");
+    }
+    return createMockResponse(null, "Logged out successfully");
+  }
+
+  // Real API call - backend will clear cookie
+  const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+    method: "POST",
+    headers: createHeaders(),
+    credentials: "include",
+    body: JSON.stringify({ refresh_token: "" }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Logout failed");
+  }
+
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("current_user");
+  }
+
+  const data = await response.json();
+  return wrapBackendResponse(data, "Logged out successfully");
+}
+
+/**
+ * Handles logout all devices
+ */
+async function handleAuthLogoutAll(): Promise<ApiResponse> {
+  if (USE_MOCK) {
+    await delay();
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("current_user");
+    }
+    return createMockResponse(null, "Logged out from all devices successfully");
+  }
+
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE_URL}/auth/logout-all`, {
+    method: "POST",
+    headers: createHeaders(token),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Logout all failed");
+  }
+
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("current_user");
+  }
+
+  const data = await response.json();
+  return wrapBackendResponse(data, "Logged out from all devices successfully");
+}
+
+/**
+ * Handles update current user profile
+ */
+async function handleUpdateMe(data: any): Promise<ApiResponse> {
+  if (USE_MOCK) {
+    await delay();
+    // Mock: update local storage user data
+    if (typeof window !== "undefined") {
+      const currentUser = JSON.parse(localStorage.getItem("current_user") || "{}");
+      const updatedUser = { ...currentUser, ...data };
+      localStorage.setItem("current_user", JSON.stringify(updatedUser));
+    }
+    return createMockResponse(data, "Profile updated successfully");
+  }
+
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE_URL}/users/me`, {
+    method: "PATCH",
+    headers: createHeaders(token),
+    credentials: "include",
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to update profile");
+  }
+
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData, "Profile updated successfully");
 }
 
 /**
@@ -150,6 +332,7 @@ async function handleUsersList(): Promise<ApiResponse> {
   const response = await fetch(`${API_BASE_URL}/users`, {
     method: "GET",
     headers: createHeaders(token),
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -157,7 +340,8 @@ async function handleUsersList(): Promise<ApiResponse> {
     throw new Error(error.message || "Failed to fetch users");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -174,7 +358,8 @@ async function handleGetUser(id: string): Promise<ApiResponse> {
   }
 
   const token = getAuthToken();
-  const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+  const url = API_BASE_URL + "/users/" + id;
+  const response = await fetch(url, {
     method: "GET",
     headers: createHeaders(token),
   });
@@ -184,7 +369,8 @@ async function handleGetUser(id: string): Promise<ApiResponse> {
     throw new Error(error.message || "Failed to fetch user");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -193,6 +379,7 @@ async function handleGetUser(id: string): Promise<ApiResponse> {
 async function handleCreateUser(userData: any): Promise<ApiResponse> {
   if (USE_MOCK) {
     await delay();
+
     const response = mockData.createUser(userData);
     return response.success
       ? createMockResponse(response.data, "User created successfully")
@@ -211,7 +398,8 @@ async function handleCreateUser(userData: any): Promise<ApiResponse> {
     throw new Error(error.message || "Failed to create user");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -241,7 +429,8 @@ async function handleUpdateUser(
     throw new Error(error.message || "Failed to update user");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -260,6 +449,7 @@ async function handleDeleteUser(id: string): Promise<ApiResponse> {
   const response = await fetch(`${API_BASE_URL}/users/${id}`, {
     method: "DELETE",
     headers: createHeaders(token),
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -267,7 +457,65 @@ async function handleDeleteUser(id: string): Promise<ApiResponse> {
     throw new Error(error.message || "Failed to delete user");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
+}
+
+/**
+ * Handles update user photo
+ */
+async function handleUpdateUserPhoto(
+  id: string,
+  formData: any,
+): Promise<ApiResponse> {
+  if (USE_MOCK) {
+    await delay();
+    return createMockResponse(
+      { photo: "https://res.cloudinary.com/mock/photo.jpg" },
+      "User photo updated successfully",
+    );
+  }
+
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE_URL}/users/${id}/photo`, {
+    method: "PATCH",
+    headers: createHeaders(token, true), // isFormData = true
+    credentials: "include",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to update user photo");
+  }
+
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
+}
+
+/**
+ * Handles delete user photo
+ */
+async function handleDeleteUserPhoto(id: string): Promise<ApiResponse> {
+  if (USE_MOCK) {
+    await delay();
+    return createMockResponse(null, "User photo deleted successfully");
+  }
+
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE_URL}/users/${id}/photo`, {
+    method: "DELETE",
+    headers: createHeaders(token),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to delete user photo");
+  }
+
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -296,7 +544,8 @@ async function handlePaymentsList(
     throw new Error(error.message || "Failed to fetch payments");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -323,13 +572,17 @@ async function handleGetPayment(id: string): Promise<ApiResponse> {
     throw new Error(error.message || "Failed to fetch payment");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
  * Handles create payment
  */
-async function handleCreatePayment(paymentData: any): Promise<ApiResponse> {
+async function handleCreatePayment(
+  paymentData: any,
+  isFormData?: boolean,
+): Promise<ApiResponse> {
   if (USE_MOCK) {
     await delay();
     const response = mockData.createPayment(paymentData);
@@ -342,10 +595,13 @@ async function handleCreatePayment(paymentData: any): Promise<ApiResponse> {
   }
 
   const token = getAuthToken();
+  const headers = createHeaders(token, isFormData);
+
   const response = await fetch(`${API_BASE_URL}/payments`, {
     method: "POST",
-    headers: createHeaders(token),
-    body: JSON.stringify(paymentData),
+    headers,
+    credentials: "include",
+    body: isFormData ? paymentData : JSON.stringify(paymentData),
   });
 
   if (!response.ok) {
@@ -353,7 +609,8 @@ async function handleCreatePayment(paymentData: any): Promise<ApiResponse> {
     throw new Error(error.message || "Failed to create payment");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -386,7 +643,8 @@ async function handleApprovePayment(
     throw new Error(error.message || "Failed to approve payment");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -415,7 +673,8 @@ async function handleWithdrawalsList(
     throw new Error(error.message || "Failed to fetch withdrawals");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -442,7 +701,8 @@ async function handleGetWithdrawal(id: string): Promise<ApiResponse> {
     throw new Error(error.message || "Failed to fetch withdrawal");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -474,7 +734,8 @@ async function handleCreateWithdrawal(
     throw new Error(error.message || "Failed to create withdrawal");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -507,7 +768,8 @@ async function handleApproveWithdrawal(
     throw new Error(error.message || "Failed to approve withdrawal");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -535,7 +797,8 @@ async function handleMySavings(): Promise<ApiResponse> {
     throw new Error(error.message || "Failed to fetch savings");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -559,7 +822,8 @@ async function handleAllSavings(): Promise<ApiResponse> {
     throw new Error(error.message || "Failed to fetch all savings");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -568,10 +832,10 @@ async function handleAllSavings(): Promise<ApiResponse> {
 async function handleMyProfile(): Promise<ApiResponse> {
   if (USE_MOCK) {
     await delay();
-    
+
     // Get current user from auth mock
     const authResponse = mockData.handleAuthMe("");
-    if (!authResponse || !('data' in authResponse) || !authResponse.data) {
+    if (!authResponse || !("data" in authResponse) || !authResponse.data) {
       return createMockErrorResponse(401, "Unauthorized");
     }
 
@@ -596,7 +860,8 @@ async function handleMyProfile(): Promise<ApiResponse> {
     throw new Error(error.message || "Failed to fetch profile");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -605,10 +870,10 @@ async function handleMyProfile(): Promise<ApiResponse> {
 async function handleUpdateMyProfile(data: any): Promise<ApiResponse> {
   if (USE_MOCK) {
     await delay();
-    
+
     // Get current user from auth mock
     const authResponse = mockData.handleAuthMe("");
-    if (!authResponse || !('data' in authResponse) || !authResponse.data) {
+    if (!authResponse || !("data" in authResponse) || !authResponse.data) {
       return createMockErrorResponse(401, "Unauthorized");
     }
 
@@ -637,7 +902,8 @@ async function handleUpdateMyProfile(data: any): Promise<ApiResponse> {
     throw new Error(error.message || "Failed to update profile");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -662,7 +928,8 @@ async function handleDailyReport(date?: string): Promise<ApiResponse> {
     throw new Error(error.message || "Failed to fetch daily report");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -690,7 +957,8 @@ async function handleAngkatanReport(angkatan?: string): Promise<ApiResponse> {
     throw new Error(error.message || "Failed to fetch angkatan report");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -714,7 +982,52 @@ async function handleSummaryReport(): Promise<ApiResponse> {
     throw new Error(error.message || "Failed to fetch summary report");
   }
 
-  return response.json();
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
+}
+
+/**
+ * Handles dashboard data
+ */
+async function handleDashboard(): Promise<ApiResponse> {
+  if (USE_MOCK) {
+    await delay();
+    // Return mock dashboard data
+    return createMockResponse(
+      {
+        totalMembers: 50,
+        totalSavings: 125000000,
+        pendingPayments: 15,
+        pendingWithdrawals: 8,
+        recentActivities: [],
+        recentApprovals: [],
+        recentAlerts: [],
+        paymentTrend: [],
+        paymentStatus: {},
+        savingsBreakdown: {},
+        memberActivity: {},
+      },
+      "Dashboard data retrieved successfully",
+    );
+  }
+
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE_URL}/dashboard`, {
+    method: "GET",
+    headers: createHeaders(token),
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to fetch dashboard");
+  }
+
+  const responseData = await response.json();
+  return wrapBackendResponse(
+    responseData,
+    "Dashboard data retrieved successfully",
+  );
 }
 
 /**
@@ -726,6 +1039,7 @@ export async function apiHandler(
   method: string = "GET",
   data?: any,
   params?: Record<string, any>,
+  isFormData?: boolean,
 ): Promise<ApiResponse> {
   try {
     // Auth endpoints
@@ -735,8 +1049,23 @@ export async function apiHandler(
     if (endpoint === "/auth/me") {
       return handleAuthMe();
     }
+    if (endpoint === "/auth/refresh") {
+      return handleAuthRefresh();
+    }
+    if (endpoint === "/auth/logout") {
+      return handleAuthLogout();
+    }
+    if (endpoint === "/auth/logout-all") {
+      return handleAuthLogoutAll();
+    }
 
     // Users endpoints
+    if (endpoint === "/users/me" && method === "GET") {
+      return handleAuthMe(); // Same as /auth/me
+    }
+    if (endpoint === "/users/me" && method === "PATCH") {
+      return handleUpdateMe(data);
+    }
     if (endpoint === "/users" && method === "GET") {
       return handleUsersList();
     }
@@ -749,10 +1078,18 @@ export async function apiHandler(
     }
     if (endpoint.startsWith("/users/") && method === "PATCH") {
       const id = endpoint.split("/")[2];
+      // Check if it's a photo update
+      if (endpoint.includes("/photo")) {
+        return handleUpdateUserPhoto(id, data);
+      }
       return handleUpdateUser(id, data);
     }
     if (endpoint.startsWith("/users/") && method === "DELETE") {
       const id = endpoint.split("/")[2];
+      // Check if it's a photo deletion
+      if (endpoint.includes("/photo")) {
+        return handleDeleteUserPhoto(id);
+      }
       return handleDeleteUser(id);
     }
 
@@ -769,7 +1106,7 @@ export async function apiHandler(
       return handleGetPayment(id);
     }
     if (endpoint === "/payments" && method === "POST") {
-      return handleCreatePayment(data);
+      return handleCreatePayment(data, isFormData);
     }
     if (endpoint.includes("/approve") && method === "PATCH") {
       const id = endpoint.split("/")[2];
@@ -823,6 +1160,11 @@ export async function apiHandler(
     }
     if (endpoint === "/reports/summary") {
       return handleSummaryReport();
+    }
+
+    // Dashboard endpoint
+    if (endpoint === "/dashboard") {
+      return handleDashboard();
     }
 
     throw new Error(`Unknown endpoint: ${endpoint}`);

@@ -1,3 +1,8 @@
+import * as dotenv from 'dotenv';
+
+// Load environment variables BEFORE any module initialization
+dotenv.config();
+
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
@@ -10,11 +15,16 @@ import { WithdrawalsModule } from './withdrawals/withdrawals.module';
 import { SavingsModule } from './savings/savings.module';
 import { ReportsModule } from './reports/reports.module';
 import { CommonModule } from './common/common.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { EmailModule } from './email/email.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
     }),
     CommonModule,
     PrismaModule,
@@ -24,6 +34,10 @@ import { CommonModule } from './common/common.module';
     WithdrawalsModule,
     SavingsModule,
     ReportsModule,
+    CloudinaryModule,
+    EmailModule,
+    NotificationsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

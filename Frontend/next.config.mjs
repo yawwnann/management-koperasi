@@ -2,6 +2,9 @@
 const nextConfig = {
   images: {
     qualities: [75, 100],
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
       {
         protocol: "https",
@@ -26,6 +29,11 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "placehold.co",
+        port: ""
+      },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
         port: ""
       }
     ]

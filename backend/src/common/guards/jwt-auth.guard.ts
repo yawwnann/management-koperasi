@@ -8,7 +8,22 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { IS_PUBLIC_KEY, Public } from '../decorators/public.decorator';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+
+// Define JWT payload type
+interface JwtPayload {
+  sub: string;
+  email: string;
+  role: string;
+  name: string;
+  iat?: number;
+  exp?: number;
+}
+
+// Extend Express Request to include user property
+interface RequestWithUser extends Request {
+  user?: JwtPayload;
+}
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -28,7 +43,7 @@ export class JwtAuthGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
     const token = this.extractTokenFromHeader(request);
 
     if (!token) {
@@ -36,10 +51,11 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get<string>('JWT_SECRET'),
+      const secret = this.configService.get<string>('JWT_SECRET') ?? '';
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
+        secret,
       });
-      request['user'] = payload;
+      request.user = payload;
     } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }

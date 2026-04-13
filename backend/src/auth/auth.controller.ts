@@ -4,23 +4,142 @@ import {
   Get,
   Body,
   Request,
+  Response,
   UseGuards,
   HttpCode,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
+import type {
+  Request as ExpressRequest,
+  Response as ExpressResponse,
+} from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { Public } from '../common/decorators/public.decorator';
+import { JwtService } from '@nestjs/jwt';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private jwtService: JwtService,
+  ) {}
 
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(
+    @Body() loginDto: LoginDto,
+    @Request() req: ExpressRequest,
+    @Response({ passthrough: true }) res: ExpressResponse,
+  ) {
+    const userAgent = req.headers['user-agent'];
+    const result = await this.authService.login(loginDto, userAgent);
+
+    // Set refresh token as httpOnly cookie
+    const cookieName = process.env.REFRESH_TOKEN_COOKIE_NAME || 'refresh_token';
+    res.cookie(cookieName, result.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
+      path: '/',
+    });
+
+    // Return response without the refresh_token (it's in the cookie)
+    const { refresh_token, ...responseWithoutRefreshToken } = result;
+    return responseWithoutRefreshToken;
+  }
+
+  @Public()
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  async refresh(
+    @Body() refreshTokenDto: RefreshTokenDto,
+    @Request() req: ExpressRequest,
+    @Response({ passthrough: true }) res: ExpressResponse,
+  ) {
+    const userAgent = req.headers['user-agent'];
+    
+    // Get refresh token from cookie (cookie-parser middleware)
+    const cookieName = process.env.REFRESH_TOKEN_COOKIE_NAME || 'refresh_token';
+    const token = req.cookies?.[cookieName] || refreshTokenDto.refresh_token;
+    
+    if (!token) {
+      throw new UnauthorizedException('Refresh token not found in cookie');
+    }
+    
+    const result = await this.authService.refreshTokens(token, userAgent);
+
+    // Set new refresh token as httpOnly cookie
+    res.cookie(cookieName, result.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: '/',
+    });
+
+    // Return only access token
+    return { access_token: result.access_token };
+  }
+
+  @Public()
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(
+    @Body() refreshTokenDto: RefreshTokenDto,
+    @Request() req: ExpressRequest,
+    @Response({ passthrough: true }) res: ExpressResponse,
+  ) {
+    // Get refresh token from cookie
+    const cookieName = process.env.REFRESH_TOKEN_COOKIE_NAME || 'refresh_token';
+    const token = req.cookies?.[cookieName] || refreshTokenDto.refresh_token;
+    
+    try {
+      if (token) {
+        const payload = this.jwtService.verify(token, {
+          secret: process.env.REFRESH_TOKEN_SECRET,
+        });
+
+        await this.authService.logout(payload.jti);
+      }
+    } catch {
+      // Even if token is invalid, clear the cookie
+    }
+
+    // Clear the cookie
+    res.clearCookie(cookieName, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      path: '/',
+    });
+
+    return { message: 'Logged out successfully' };
+  }
+
+  @Post('logout-all')
+  @HttpCode(HttpStatus.OK)
+  async logoutAll(
+    @Request() req: ExpressRequest,
+    @Response({ passthrough: true }) res: ExpressResponse,
+  ) {
+    const user = (req as any).user;
+    await this.authService.logoutAll(user.sub);
+
+    // Clear the cookie
+    const cookieName = process.env.REFRESH_TOKEN_COOKIE_NAME || 'refresh_token';
+    res.clearCookie(cookieName, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      path: '/',
+    });
+
+    return { message: 'Logged out from all devices successfully' };
   }
 
   @Get('me')

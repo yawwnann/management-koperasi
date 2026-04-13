@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ProtectedRoute } from "@/components/protected-route";
 import { reportsApi } from "@/lib/api";
 import { formatDate } from "@/lib/api-helpers";
-import type { DailyReport, AngkatanReport, SystemSummary } from "@/types/api.types";
+import { Calendar, Users, Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, Filter, Download, Activity } from "lucide-react";
 
 type ReportTab = "daily" | "angkatan" | "summary";
 
@@ -18,87 +18,61 @@ export default function LaporanPage() {
 }
 
 function LaporanContent() {
-  const [activeTab, setActiveTab] = useState<ReportTab>("summary");
-  const [dailyReport, setDailyReport] = useState<DailyReport | null>(null);
-  const [angkatanReport, setAngkatanReport] = useState<AngkatanReport[]>([]);
-  const [systemSummary, setSystemSummary] = useState<SystemSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<ReportTab>("daily");
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [selectedAngkatan, setSelectedAngkatan] = useState("");
+  const [dailyReport, setDailyReport] = useState<any>(null);
+  const [angkatanReport, setAngkatanReport] = useState<any>(null);
+  const [summaryReport, setSummaryReport] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadReport();
-  }, [activeTab, selectedDate]);
+  }, [activeTab, selectedDate, selectedAngkatan]);
 
   async function loadReport() {
     setLoading(true);
     try {
       if (activeTab === "daily") {
         const response = await reportsApi.getDaily(selectedDate);
-        if (response.success) {
-          setDailyReport(response.data as DailyReport);
-        }
+        if (response.success) setDailyReport(response.data);
       } else if (activeTab === "angkatan") {
-        const response = await reportsApi.getAngkatan();
-        if (response.success) {
-          setAngkatanReport(response.data as AngkatanReport[]);
-        }
-      } else if (activeTab === "summary") {
+        const response = await reportsApi.getAngkatan(selectedAngkatan || undefined);
+        if (response.success) setAngkatanReport(response.data);
+      } else {
         const response = await reportsApi.getSummary();
-        if (response.success) {
-          setSystemSummary(response.data as SystemSummary);
-        }
+        if (response.success) setSummaryReport(response.data);
       }
     } catch (error) {
       console.error("Failed to load report:", error);
-      setMessage({ type: "error", text: "Gagal memuat data laporan." });
     } finally {
       setLoading(false);
     }
   }
 
+  const tabs = [
+    { key: "daily" as ReportTab, label: "Laporan Harian", icon: <Calendar className="h-4 w-4" /> },
+    { key: "angkatan" as ReportTab, label: "Laporan Angkatan", icon: <Users className="h-4 w-4" /> },
+    { key: "summary" as ReportTab, label: "Ringkasan", icon: <Activity className="h-4 w-4" /> },
+  ];
+
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string; className: string }> = {
-      APPROVED: { label: "Disetujui", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
-      PENDING: { label: "Menunggu", className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" },
-      REJECTED: { label: "Ditolak", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
-    };
-    const config = statusMap[status] || { label: status, className: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300" };
-    return (
-      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${config.className}`}>
-        {config.label}
-      </span>
-    );
-  };
-
-  const getTypeBadge = (type: string) => {
-    const typeColors: Record<string, string> = {
-      "Simpanan Pokok": "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-      "Simpanan Wajib": "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
-      "Simpanan Sukarela": "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-    };
-    const color = typeColors[type] || "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300";
-    return (
-      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${color}`}>
-        {type}
-      </span>
-    );
+    if (isNaN(amount) || amount === undefined || amount === null) return "Rp 0";
+    return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount);
   };
 
   return (
-    <div className="mx-auto max-w-7xl">
-      {/* Breadcrumb - compact version without title */}
-      <div className="mb-6 flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-dark dark:text-white">Laporan</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Analisis dan laporan transaksi koperasi
+          </p>
+        </div>
         <nav className="flex items-center gap-2 text-sm">
-          <Link href="/" className="font-medium text-gray-500 hover:text-primary dark:text-gray-400">
+          <Link href="/" className="text-gray-500 hover:text-primary dark:text-gray-400">
             Dashboard
           </Link>
           <span className="text-gray-400">/</span>
@@ -106,382 +80,396 @@ function LaporanContent() {
         </nav>
       </div>
 
-      {/* Message */}
-      {message && (
-        <div
-          className={`mb-4 rounded-md border p-4 ${
-            message.type === "success"
-              ? "border-green-300 bg-green-50 text-green-700 dark:border-green-600 dark:bg-green-900/20 dark:text-green-400"
-              : "border-red-300 bg-red-50 text-red-700 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400"
-          }`}
-        >
-          {message.text}
-        </div>
-      )}
-
       {/* Tabs */}
-      <div className="mb-6 rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-        <div className="flex border-b border-stroke dark:border-strokedark">
-          <button
-            onClick={() => setActiveTab("summary")}
-            className={`flex-1 px-6 py-4 text-sm font-medium transition ${
-              activeTab === "summary"
-                ? "border-b-2 border-primary bg-primary/5 text-primary dark:text-primary"
-                : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
-            }`}
-          >
-            Ringkasan Sistem
-          </button>
-          <button
-            onClick={() => setActiveTab("daily")}
-            className={`flex-1 px-6 py-4 text-sm font-medium transition ${
-              activeTab === "daily"
-                ? "border-b-2 border-primary bg-primary/5 text-primary dark:text-primary"
-                : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
-            }`}
-          >
-            Laporan Harian
-          </button>
-          <button
-            onClick={() => setActiveTab("angkatan")}
-            className={`flex-1 px-6 py-4 text-sm font-medium transition ${
-              activeTab === "angkatan"
-                ? "border-b-2 border-primary bg-primary/5 text-primary dark:text-primary"
-                : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800"
-            }`}
-          >
-            Laporan per Angkatan
-          </button>
+      <div className="rounded-xl border border-stroke bg-white p-2 shadow-sm dark:border-strokedark dark:bg-boxdark">
+        <div className="flex flex-wrap gap-2">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition ${
+                activeTab === tab.key
+                  ? "bg-primary text-white"
+                  : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
         </div>
+      </div>
 
-        {/* Summary Report */}
-        {activeTab === "summary" && (
-          <div className="p-6">
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <svg className="h-8 w-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <span className="ml-3 text-gray-600 dark:text-gray-400">Memuat data...</span>
-              </div>
-            ) : systemSummary ? (
-              <div className="space-y-6">
-                {/* Overview Stats */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="rounded-lg border border-stroke bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white shadow-lg">
-                    <p className="text-sm text-blue-100">Total Anggota</p>
-                    <p className="mt-2 text-3xl font-bold">{systemSummary.totalUsers}</p>
-                    <p className="mt-1 text-xs text-blue-100">Aktif: {systemSummary.activeUsers}</p>
-                  </div>
-                  <div className="rounded-lg border border-stroke bg-gradient-to-br from-green-500 to-green-600 p-6 text-white shadow-lg">
-                    <p className="text-sm text-green-100">Total Simpanan</p>
-                    <p className="mt-2 text-3xl font-bold">{formatCurrency(systemSummary.totalSavings)}</p>
-                  </div>
-                  <div className="rounded-lg border border-stroke bg-gradient-to-br from-purple-500 to-purple-600 p-6 text-white shadow-lg">
-                    <p className="text-sm text-purple-100">Total Transaksi</p>
-                    <p className="mt-2 text-3xl font-bold">
-                      {systemSummary.totalPayments + systemSummary.totalWithdrawals}
-                    </p>
-                    <p className="mt-1 text-xs text-purple-100">
-                      {systemSummary.totalPayments} pembayaran, {systemSummary.totalWithdrawals} penarikan
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-stroke bg-gradient-to-br from-orange-500 to-orange-600 p-6 text-white shadow-lg">
-                    <p className="text-sm text-orange-100">Menunggu Verifikasi</p>
-                    <p className="mt-2 text-3xl font-bold">
-                      {systemSummary.pendingPayments + systemSummary.pendingWithdrawals}
-                    </p>
-                    <p className="mt-1 text-xs text-orange-100">
-                      {systemSummary.pendingPayments} pembayaran, {systemSummary.pendingWithdrawals} penarikan
-                    </p>
-                  </div>
-                </div>
-
-                {/* Payment Stats */}
-                <div className="rounded-lg border border-stroke p-6 dark:border-strokedark">
-                  <h3 className="mb-4 text-lg font-semibold text-dark dark:text-white">Statistik Pembayaran</h3>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <div className="rounded-md bg-green-50 p-4 dark:bg-green-900/20">
-                      <p className="text-sm text-green-700 dark:text-green-400">Disetujui</p>
-                      <p className="mt-1 text-2xl font-bold text-green-800 dark:text-green-300">
-                        {systemSummary.approvedPayments}
-                      </p>
-                    </div>
-                    <div className="rounded-md bg-yellow-50 p-4 dark:bg-yellow-900/20">
-                      <p className="text-sm text-yellow-700 dark:text-yellow-400">Menunggu</p>
-                      <p className="mt-1 text-2xl font-bold text-yellow-800 dark:text-yellow-300">
-                        {systemSummary.pendingPayments}
-                      </p>
-                    </div>
-                    <div className="rounded-md bg-red-50 p-4 dark:bg-red-900/20">
-                      <p className="text-sm text-red-700 dark:text-red-400">Ditolak</p>
-                      <p className="mt-1 text-2xl font-bold text-red-800 dark:text-red-300">
-                        {systemSummary.rejectedPayments}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Withdrawal Stats */}
-                <div className="rounded-lg border border-stroke p-6 dark:border-strokedark">
-                  <h3 className="mb-4 text-lg font-semibold text-dark dark:text-white">Statistik Penarikan</h3>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <div className="rounded-md bg-green-50 p-4 dark:bg-green-900/20">
-                      <p className="text-sm text-green-700 dark:text-green-400">Disetujui</p>
-                      <p className="mt-1 text-2xl font-bold text-green-800 dark:text-green-300">
-                        {systemSummary.approvedWithdrawals}
-                      </p>
-                    </div>
-                    <div className="rounded-md bg-yellow-50 p-4 dark:bg-yellow-900/20">
-                      <p className="text-sm text-yellow-700 dark:text-yellow-400">Menunggu</p>
-                      <p className="mt-1 text-2xl font-bold text-yellow-800 dark:text-yellow-300">
-                        {systemSummary.pendingWithdrawals}
-                      </p>
-                    </div>
-                    <div className="rounded-md bg-red-50 p-4 dark:bg-red-900/20">
-                      <p className="text-sm text-red-700 dark:text-red-400">Ditolak</p>
-                      <p className="mt-1 text-2xl font-bold text-red-800 dark:text-red-300">
-                        {systemSummary.rejectedWithdrawals}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="py-12 text-center text-gray-500 dark:text-gray-400">
-                Tidak ada data ringkasan.
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Daily Report */}
-        {activeTab === "daily" && (
-          <div className="p-6">
-            {/* Date Picker */}
-            <div className="mb-4 flex items-center gap-4">
-              <label className="text-sm font-medium text-dark dark:text-white" htmlFor="date">
-                Tanggal:
-              </label>
+      {/* Filters */}
+      <div className="rounded-xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+        <div className="flex items-center gap-4">
+          <Filter className="h-4 w-4 text-gray-400" />
+          {activeTab === "daily" && (
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-gray-600 dark:text-gray-400">Tanggal:</label>
               <input
-                id="date"
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="rounded-lg border border-stroke px-4 py-2 text-dark outline-none transition focus:border-primary dark:border-strokedark dark:text-white dark:focus:border-primary"
+                className="rounded-lg border border-stroke bg-white px-4 py-2 text-sm text-dark outline-none transition focus:border-primary dark:border-strokedark dark:bg-gray-800 dark:text-white dark:focus:border-primary"
               />
             </div>
+          )}
+          {activeTab === "angkatan" && (
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-gray-600 dark:text-gray-400">Angkatan:</label>
+              <select
+                value={selectedAngkatan}
+                onChange={(e) => setSelectedAngkatan(e.target.value)}
+                className="rounded-lg border border-stroke bg-white px-4 py-2 text-sm text-dark outline-none transition focus:border-primary dark:border-strokedark dark:bg-gray-800 dark:text-white dark:focus:border-primary"
+              >
+                <option value="">Semua Angkatan</option>
+                <option value="2020">2020</option>
+                <option value="2021">2021</option>
+                <option value="2022">2022</option>
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+              </select>
+            </div>
+          )}
+          {activeTab === "summary" && (
+            <p className="text-sm text-gray-600 dark:text-gray-400">Ringkasan data koperasi secara keseluruhan</p>
+          )}
+        </div>
+      </div>
 
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <svg className="h-8 w-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <span className="ml-3 text-gray-600 dark:text-gray-400">Memuat data...</span>
+      {/* Loading State */}
+      {loading ? (
+        <div className="flex items-center justify-center rounded-xl border border-stroke bg-white p-12 dark:border-strokedark dark:bg-boxdark">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            Memuat laporan...
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Daily Report */}
+          {activeTab === "daily" && dailyReport && (
+            <DailyReportContent report={dailyReport} date={selectedDate} formatCurrency={formatCurrency} />
+          )}
+
+          {/* Angkatan Report */}
+          {activeTab === "angkatan" && angkatanReport && (
+            <AngkatanReportContent report={angkatanReport} formatCurrency={formatCurrency} />
+          )}
+
+          {/* Summary Report */}
+          {activeTab === "summary" && summaryReport && (
+            <SummaryReportContent report={summaryReport} formatCurrency={formatCurrency} />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// Daily Report Content Component
+function DailyReportContent({ report, date, formatCurrency }: { report: any; date: string; formatCurrency: (v: number) => string }) {
+  const combinedTransactions = () => {
+    if (!report) return [];
+    const payments = (report.payments?.data || []).map((p: any) => ({ ...p, _type: "PEMBAYARAN" }));
+    const withdrawals = (report.withdrawals?.data || []).map((w: any) => ({ ...w, _type: "PENARIKAN" }));
+    return [...payments, ...withdrawals].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  };
+
+  const transactions = combinedTransactions();
+
+  return (
+    <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-xl border border-stroke bg-white p-5 shadow-sm dark:border-strokedark dark:bg-boxdark">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Kas Masuk</p>
+              <p className="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(report.payments?.totalApproved || 0)}</p>
+              <p className="mt-1 text-xs text-gray-500">{report.payments?.count || 0} transaksi disetujui</p>
+            </div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/30">
+              <ArrowUpRight className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border border-stroke bg-white p-5 shadow-sm dark:border-strokedark dark:bg-boxdark">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Kas Keluar</p>
+              <p className="mt-1 text-2xl font-bold text-red-600 dark:text-red-400">{formatCurrency(report.withdrawals?.totalApproved || 0)}</p>
+              <p className="mt-1 text-xs text-gray-500">{report.withdrawals?.count || 0} transaksi disetujui</p>
+            </div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-100 dark:bg-red-900/30">
+              <ArrowDownRight className="h-5 w-5 text-red-600 dark:text-red-400" />
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border border-stroke bg-white p-5 shadow-sm dark:border-strokedark dark:bg-boxdark">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Net Balance</p>
+              <p className="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(report.netTotal || 0)}</p>
+              <p className="mt-1 text-xs text-gray-500">{formatDate(date)}</p>
+            </div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/30">
+              <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Transactions Table */}
+      <div className="rounded-xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark">
+        <div className="flex items-center justify-between border-b border-stroke px-6 py-4 dark:border-strokedark">
+          <h3 className="text-lg font-semibold text-dark dark:text-white">Transaksi</h3>
+          <button className="flex items-center gap-2 rounded-lg border border-stroke px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-100 dark:border-strokedark dark:text-gray-400 dark:hover:bg-gray-700">
+            <Download className="h-4 w-4" />
+            Export
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-stroke dark:border-strokedark">
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Pengguna</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Tipe</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Nominal</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Waktu</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-stroke dark:divide-strokedark">
+              {transactions.length > 0 ? (
+                transactions.map((t: any, index: number) => (
+                  <tr key={`${t._type}-${t.id}`} className="transition hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-medium text-dark dark:text-white">{t.user?.name || "Unknown"}</p>
+                      <p className="text-xs text-gray-500">{t.user?.email || "-"}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+                        t._type === "PEMBAYARAN"
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                      }`}>
+                        {t._type}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <span className="text-sm font-semibold text-dark dark:text-white">{formatCurrency(Number(t.nominal))}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {new Date(t.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+                        t.status === "APPROVED"
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : t.status === "PENDING"
+                            ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                            : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                      }`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${
+                          t.status === "APPROVED" ? "bg-green-500" : t.status === "PENDING" ? "bg-yellow-500" : "bg-red-500"
+                        }`} />
+                        {t.status === "APPROVED" ? "Disetujui" : t.status === "PENDING" ? "Pending" : "Ditolak"}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                    <Calendar className="mx-auto mb-2 h-8 w-8 opacity-40" />
+                    <p className="font-medium">Tidak ada transaksi</p>
+                    <p className="text-sm">Belum ada transaksi pada tanggal ini</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Angkatan Report Content Component
+function AngkatanReportContent({ report, formatCurrency }: { report: any; formatCurrency: (v: number) => string }) {
+  const angkatanList = Array.isArray(report) ? report : report ? [report] : [];
+
+  return (
+    <div className="space-y-6">
+      {angkatanList.length > 0 ? (
+        angkatanList.map((ar: any, index: number) => (
+          <div key={ar.angkatan || index} className="rounded-xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark">
+            <div className="border-b border-stroke px-6 py-4 dark:border-strokedark">
+              <h3 className="text-lg font-semibold text-dark dark:text-white">
+                Angkatan {ar.angkatan || "Tidak Diketahui"}
+              </h3>
+            </div>
+            <div className="p-6">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-lg border border-stroke bg-gray-50 p-4 dark:border-strokedark dark:bg-gray-800/50">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Anggota</p>
+                  <p className="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400">{ar.totalMembers || 0}</p>
+                </div>
+                <div className="rounded-lg border border-stroke bg-gray-50 p-4 dark:border-strokedark dark:bg-gray-800/50">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Simpanan</p>
+                  <p className="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(ar.totalSavings || 0)}</p>
+                </div>
+                <div className="rounded-lg border border-stroke bg-gray-50 p-4 dark:border-strokedark dark:bg-gray-800/50">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Kas Masuk</p>
+                  <p className="mt-1 text-2xl font-bold text-gray-700 dark:text-gray-300">{formatCurrency(ar.totalPayments || 0)}</p>
+                </div>
+                <div className="rounded-lg border border-stroke bg-gray-50 p-4 dark:border-strokedark dark:bg-gray-800/50">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Rata-rata</p>
+                  <p className="mt-1 text-2xl font-bold text-purple-600 dark:text-purple-400">
+                    {formatCurrency((ar.totalSavings || 0) / (ar.totalMembers || 1))}
+                  </p>
+                </div>
               </div>
-            ) : dailyReport ? (
-              <div className="space-y-6">
-                {/* Daily Stats */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="rounded-lg border border-stroke bg-white p-4 shadow-default dark:border-strokedark dark:bg-boxdark">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Total Pembayaran</p>
-                    <p className="mt-1 text-2xl font-bold text-dark dark:text-white">{dailyReport.totalPayments}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
-                      Disetujui: {dailyReport.approvedPayments} | Menunggu: {dailyReport.pendingPayments}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-stroke bg-white p-4 shadow-default dark:border-strokedark dark:bg-boxdark">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Total Penarikan</p>
-                    <p className="mt-1 text-2xl font-bold text-dark dark:text-white">{dailyReport.totalWithdrawals}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">
-                      Disetujui: {dailyReport.approvedWithdrawals} | Menunggu: {dailyReport.pendingWithdrawals}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-green-300 bg-green-50 p-4 shadow-default dark:border-green-600 dark:bg-green-900/20">
-                    <p className="text-sm text-green-700 dark:text-green-400">Total Masuk</p>
-                    <p className="mt-1 text-2xl font-bold text-green-800 dark:text-green-300">
-                      {formatCurrency(dailyReport.totalPaymentAmount)}
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-red-300 bg-red-50 p-4 shadow-default dark:border-red-600 dark:bg-red-900/20">
-                    <p className="text-sm text-red-700 dark:text-red-400">Total Keluar</p>
-                    <p className="mt-1 text-2xl font-bold text-red-800 dark:text-red-300">
-                      {formatCurrency(dailyReport.totalWithdrawalAmount)}
-                    </p>
+
+              {/* Members Table */}
+              {ar.members && ar.members.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="mb-4 text-sm font-semibold text-dark dark:text-white">Daftar Anggota</h4>
+                  <div className="overflow-hidden rounded-lg border border-stroke dark:border-strokedark">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-stroke bg-gray-50 dark:border-strokedark dark:bg-gray-800">
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Nama</th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">Email</th>
+                          <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400">Saldo</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stroke dark:divide-strokedark">
+                        {ar.members.map((m: any) => (
+                          <tr key={m.id} className="transition hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                            <td className="px-4 py-3 text-sm text-dark dark:text-white">{m.name}</td>
+                            <td className="px-4 py-3 text-sm text-gray-500">{m.email}</td>
+                            <td className="px-4 py-3 text-right text-sm font-semibold text-green-600 dark:text-green-400">
+                              {formatCurrency(m.savings || 0)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
-
-                {/* Payments Table */}
-                {dailyReport.payments.length > 0 && (
-                  <div className="rounded-lg border border-stroke p-6 dark:border-strokedark">
-                    <h3 className="mb-4 text-lg font-semibold text-dark dark:text-white">Daftar Pembayaran</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full table-auto">
-                        <thead>
-                          <tr className="border-b border-stroke bg-gray-50 dark:border-strokedark dark:bg-gray-800">
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Anggota</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Jenis</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Jumlah</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {dailyReport.payments.map((payment) => (
-                            <tr key={payment.id} className="border-b border-stroke dark:border-strokedark">
-                              <td className="px-4 py-3 text-sm text-dark dark:text-white">{payment.userName}</td>
-                              <td className="px-4 py-3">{getTypeBadge(payment.type)}</td>
-                              <td className="px-4 py-3 text-sm font-semibold text-dark dark:text-white">
-                                {formatCurrency(payment.amount)}
-                              </td>
-                              <td className="px-4 py-3">{getStatusBadge(payment.status)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {/* Withdrawals Table */}
-                {dailyReport.withdrawals.length > 0 && (
-                  <div className="rounded-lg border border-stroke p-6 dark:border-strokedark">
-                    <h3 className="mb-4 text-lg font-semibold text-dark dark:text-white">Daftar Penarikan</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full table-auto">
-                        <thead>
-                          <tr className="border-b border-stroke bg-gray-50 dark:border-strokedark dark:bg-gray-800">
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Anggota</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Jumlah</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {dailyReport.withdrawals.map((withdrawal) => (
-                            <tr key={withdrawal.id} className="border-b border-stroke dark:border-strokedark">
-                              <td className="px-4 py-3 text-sm text-dark dark:text-white">{withdrawal.userName}</td>
-                              <td className="px-4 py-3 text-sm font-semibold text-dark dark:text-white">
-                                {formatCurrency(withdrawal.amount)}
-                              </td>
-                              <td className="px-4 py-3">{getStatusBadge(withdrawal.status)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {dailyReport.payments.length === 0 && dailyReport.withdrawals.length === 0 && (
-                  <div className="rounded-lg border border-stroke p-12 text-center dark:border-strokedark">
-                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                      Tidak ada transaksi pada tanggal {formatDate(selectedDate, "full")}
-                    </p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="py-12 text-center text-gray-500 dark:text-gray-400">
-                Tidak ada data laporan harian.
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        )}
+        ))
+      ) : (
+        <div className="rounded-xl border border-stroke bg-white p-12 text-center dark:border-strokedark dark:bg-boxdark">
+          <Users className="mx-auto mb-2 h-8 w-8 opacity-40" />
+          <p className="font-medium text-gray-500 dark:text-gray-400">Tidak ada data angkatan</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
-        {/* Angkatan Report */}
-        {activeTab === "angkatan" && (
-          <div className="p-6">
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <svg className="h-8 w-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <span className="ml-3 text-gray-600 dark:text-gray-400">Memuat data...</span>
-              </div>
-            ) : angkatanReport.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full table-auto">
-                  <thead>
-                    <tr className="border-b border-stroke bg-gray-50 dark:border-strokedark dark:bg-gray-800">
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Angkatan
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Total Anggota
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Total Simpanan
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Rata-rata Simpanan
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Pembayaran
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        Penarikan
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {angkatanReport.map((report, index) => (
-                      <tr
-                        key={report.angkatan}
-                        className={`border-b border-stroke transition hover:bg-gray-50 dark:border-strokedark dark:hover:bg-gray-700/50 ${
-                          index % 2 === 0 ? "bg-white dark:bg-boxdark" : "bg-gray-50 dark:bg-gray-800/50"
-                        }`}
-                      >
-                        <td className="px-4 py-3 text-sm font-semibold text-dark dark:text-white">
-                          {report.angkatan}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-dark dark:text-white">{report.totalMembers}</td>
-                        <td className="px-4 py-3 text-sm font-semibold text-dark dark:text-white">
-                          {formatCurrency(report.totalSavings)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-dark dark:text-white">
-                          {formatCurrency(report.averageSavings)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-dark dark:text-white">{report.totalPayments}</td>
-                        <td className="px-4 py-3 text-sm text-dark dark:text-white">{report.totalWithdrawals}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t-2 border-stroke bg-gray-100 dark:border-strokedark dark:bg-gray-800">
-                      <td className="px-4 py-3 text-sm font-bold text-dark dark:text-white">Total</td>
-                      <td className="px-4 py-3 text-sm font-bold text-dark dark:text-white">
-                        {angkatanReport.reduce((sum, r) => sum + r.totalMembers, 0)}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-bold text-dark dark:text-white">
-                        {formatCurrency(angkatanReport.reduce((sum, r) => sum + r.totalSavings, 0))}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-bold text-dark dark:text-white">
-                        {formatCurrency(
-                          angkatanReport.reduce((sum, r) => sum + r.averageSavings, 0) / angkatanReport.length
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-bold text-dark dark:text-white">
-                        {angkatanReport.reduce((sum, r) => sum + r.totalPayments, 0)}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-bold text-dark dark:text-white">
-                        {angkatanReport.reduce((sum, r) => sum + r.totalWithdrawals, 0)}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            ) : (
-              <div className="py-12 text-center text-gray-500 dark:text-gray-400">
-                Tidak ada data laporan per angkatan.
-              </div>
-            )}
+// Summary Report Content Component
+function SummaryReportContent({ report, formatCurrency }: { report: any; formatCurrency: (v: number) => string }) {
+  return (
+    <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="rounded-xl border border-stroke bg-white p-5 shadow-sm dark:border-strokedark dark:bg-boxdark">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/30">
+              <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Total Pengguna</p>
+              <p className="mt-1 text-2xl font-bold text-dark dark:text-white">{report.totalUsers || 0}</p>
+              <p className="mt-1 text-xs text-gray-500">{report.totalAnggota || 0} anggota aktif</p>
+            </div>
           </div>
-        )}
+        </div>
+        <div className="rounded-xl border border-stroke bg-white p-5 shadow-sm dark:border-strokedark dark:bg-boxdark">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 dark:bg-green-900/30">
+              <Wallet className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Total Simpanan</p>
+              <p className="mt-1 text-2xl font-bold text-dark dark:text-white">{formatCurrency(report.totalSavings || 0)}</p>
+              <p className="mt-1 text-xs text-gray-500">Kumulatif saldo anggota</p>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border border-stroke bg-white p-5 shadow-sm dark:border-strokedark dark:bg-boxdark">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-100 dark:bg-yellow-900/30">
+              <Activity className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Pending Actions</p>
+              <p className="mt-1 text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                {(report.pendingPayments || 0) + (report.pendingWithdrawals || 0)}
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                {report.pendingPayments || 0} pembayaran / {report.pendingWithdrawals || 0} penarikan
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Transaction Summary */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-stroke bg-white p-5 shadow-sm dark:border-strokedark dark:bg-boxdark">
+          <h4 className="mb-4 text-sm font-semibold text-dark dark:text-white">Ringkasan Pembayaran</h4>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Total Pembayaran</span>
+              <span className="text-sm font-semibold text-dark dark:text-white">{report.totalPayments || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Disetujui</span>
+              <span className="text-sm font-semibold text-green-600 dark:text-green-400">{report.approvedPayments || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Pending</span>
+              <span className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">{report.pendingPayments || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Ditolak</span>
+              <span className="text-sm font-semibold text-red-600 dark:text-red-400">{report.rejectedPayments || 0}</span>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border border-stroke bg-white p-5 shadow-sm dark:border-strokedark dark:bg-boxdark">
+          <h4 className="mb-4 text-sm font-semibold text-dark dark:text-white">Ringkasan Penarikan</h4>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Total Penarikan</span>
+              <span className="text-sm font-semibold text-dark dark:text-white">{report.totalWithdrawals || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Disetujui</span>
+              <span className="text-sm font-semibold text-green-600 dark:text-green-400">{report.approvedWithdrawals || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Pending</span>
+              <span className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">{report.pendingWithdrawals || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500 dark:text-gray-400">Ditolak</span>
+              <span className="text-sm font-semibold text-red-600 dark:text-red-400">{report.rejectedWithdrawals || 0}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

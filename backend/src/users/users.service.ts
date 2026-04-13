@@ -55,6 +55,7 @@ export class UsersService {
         email: true,
         role: true,
         angkatan: true,
+        photo: true,
         isActive: true,
         createdAt: true,
       },
@@ -75,6 +76,7 @@ export class UsersService {
         email: true,
         role: true,
         angkatan: true,
+        photo: true,
         isActive: true,
         createdAt: true,
       },
@@ -123,8 +125,7 @@ export class UsersService {
         email: true,
         role: true,
         angkatan: true,
-        isActive: true,
-        updatedAt: true,
+        photo: true,
       },
     });
 
@@ -147,5 +148,35 @@ export class UsersService {
     });
 
     return { message: 'User deactivated successfully' };
+  }
+
+  /**
+   * Update user photo
+   */
+  async updatePhoto(id: string, photoUrl: string | null) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: { photo: photoUrl },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        angkatan: true,
+        photo: true,
+        isActive: true,
+        updatedAt: true,
+      },
+    });
+
+    return updatedUser;
   }
 }

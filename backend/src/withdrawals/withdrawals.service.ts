@@ -7,10 +7,16 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
 import { ApproveWithdrawalDto } from './dto/approve-withdrawal.dto';
+import { EmailService } from '../email/email.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 @Injectable()
 export class WithdrawalsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService,
+    private notificationsGateway: NotificationsGateway,
+  ) {}
 
   async create(userId: string, createWithdrawalDto: CreateWithdrawalDto) {
     // Check user's savings balance
@@ -35,7 +41,39 @@ export class WithdrawalsService {
         reason: createWithdrawalDto.reason,
         status: 'PENDING',
       },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
+
+    // Notify Admins via WebSocket
+    this.notificationsGateway.broadcastNewWithdrawal({
+      id: withdrawal.id,
+      userId: withdrawal.userId,
+      userName: withdrawal.user.name,
+      amount: Number(withdrawal.nominal),
+      status: withdrawal.status,
+    });
+
+    // Notify Admins via Email
+    const admins = await this.prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { email: true },
+    });
+
+    for (const admin of admins) {
+      this.emailService.sendAdminWithdrawalNotification(
+        admin.email,
+        withdrawal.user.name,
+        Number(withdrawal.nominal),
+      );
+    }
 
     return withdrawal;
   }
@@ -94,36 +132,59 @@ export class WithdrawalsService {
       throw new BadRequestException('Withdrawal has already been processed');
     }
 
-    // Update withdrawal status
-    const updatedWithdrawal = await this.prisma.withdrawal.update({
-      where: { id: withdrawalId },
-      data: {
-        status: approveWithdrawalDto.status,
-        verifiedBy: adminId,
-        verifiedAt: new Date(),
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
-
-    // If approved, decrease user's savings
-    if (approveWithdrawalDto.status === 'APPROVED') {
-      await this.prisma.saving.update({
-        where: { userId: withdrawal.userId },
+    // Update withdrawal status and decrement savings in a transaction
+    const updatedWithdrawal = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.withdrawal.update({
+        where: { id: withdrawalId },
         data: {
-          total: {
-            decrement: withdrawal.nominal,
+          status: approveWithdrawalDto.status,
+          verifiedBy: adminId,
+          verifiedAt: new Date(),
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
       });
-    }
+
+      // If approved, decrease user's savings
+      if (approveWithdrawalDto.status === 'APPROVED') {
+        await tx.saving.update({
+          where: { userId: withdrawal.userId },
+          data: {
+            total: {
+              decrement: withdrawal.nominal,
+            },
+          },
+        });
+      }
+
+      return updated;
+    });
+
+    // Notify User via WebSocket
+    this.notificationsGateway.broadcastWithdrawalUpdate(
+      updatedWithdrawal.userId,
+      {
+        id: updatedWithdrawal.id,
+        userName: updatedWithdrawal.user.name,
+        amount: Number(updatedWithdrawal.nominal),
+        status: updatedWithdrawal.status,
+      },
+    );
+
+    // Notify User via Email
+    this.emailService.sendWithdrawalNotification(
+      updatedWithdrawal.user.email,
+      updatedWithdrawal.user.name,
+      Number(updatedWithdrawal.nominal),
+      updatedWithdrawal.status as 'PENDING' | 'APPROVED' | 'REJECTED',
+    );
 
     return updatedWithdrawal;
   }

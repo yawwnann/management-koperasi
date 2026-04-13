@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import dynamic from "next/dynamic";
 import { ApexOptions } from "apexcharts";
 
@@ -16,6 +17,23 @@ interface MemberActivityChartProps {
 }
 
 export function MemberActivityChart({ data }: MemberActivityChartProps) {
+  // Sort data by year (ascending order)
+  const sortedData = React.useMemo(() => {
+    const combined = data.angkatan.map((angkatan, index) => ({
+      angkatan,
+      members: data.members[index],
+      savings: data.savings[index],
+    }));
+    
+    combined.sort((a, b) => parseInt(a.angkatan) - parseInt(b.angkatan));
+    
+    return {
+      angkatan: combined.map(item => item.angkatan),
+      members: combined.map(item => item.members),
+      savings: combined.map(item => item.savings),
+    };
+  }, [data.angkatan, data.members, data.savings]);
+
   const options: ApexOptions = {
     chart: {
       type: "bar",
@@ -29,7 +47,7 @@ export function MemberActivityChart({ data }: MemberActivityChartProps) {
     series: [
       {
         name: "Jumlah Anggota",
-        data: data.members,
+        data: sortedData.members,
       },
     ],
     plotOptions: {
@@ -40,7 +58,7 @@ export function MemberActivityChart({ data }: MemberActivityChartProps) {
       },
     },
     xaxis: {
-      categories: data.angkatan,
+      categories: sortedData.angkatan,
       axisBorder: {
         show: false,
       },

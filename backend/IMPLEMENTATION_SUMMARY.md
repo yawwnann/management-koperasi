@@ -70,18 +70,25 @@ Complete schema with 4 main models:
 
 ### 🔐 Security Features
 - ✅ JWT authentication with Bearer tokens
+- ✅ **Refresh token mechanism with automatic rotation**
+- ✅ **HttpOnly cookie-based refresh token storage**
+- ✅ **Token revocation and rotation for enhanced security**
+- ✅ **Token theft detection and automatic revocation**
 - ✅ Role-based access control (ANGGOTA vs ADMIN)
 - ✅ Password hashing with bcrypt
 - ✅ Input validation with class-validator
 - ✅ File type validation for uploads
-- ✅ CORS configuration
+- ✅ CORS configuration with credentials support
 - ✅ Protected routes by default (opt-out with @Public decorator)
 
 ### 📡 API Endpoints Implemented
 
 #### Authentication
-- `POST /api/auth/login` - Login (public)
-- `GET /api/auth/me` - Get current user profile
+- `POST /api/auth/login` - Login (public) - Returns access token + sets refresh token cookie
+- `POST /api/auth/refresh` - Refresh access token (public) - Requires refresh token in body
+- `POST /api/auth/logout` - Revoke refresh token (public) - Clears refresh token cookie
+- `POST /api/auth/logout-all` - Revoke all refresh tokens (protected) - Logout from all devices
+- `GET /api/auth/me` - Get current user profile (protected)
 
 #### Users (Admin Only)
 - `GET /api/users` - List all users
@@ -145,8 +152,11 @@ backend/
 │   │   ├── auth.controller.ts
 │   │   ├── auth.service.ts
 │   │   ├── auth.module.ts
+│   │   ├── refresh-token.service.ts
 │   │   └── dto/
-│   │       └── login.dto.ts
+│   │       ├── login.dto.ts
+│   │       ├── refresh-token.dto.ts
+│   │       └── auth-response.dto.ts
 │   ├── common/
 │   │   ├── decorators/
 │   │   │   ├── public.decorator.ts
@@ -234,6 +244,7 @@ backend/
 
 ✅ **Fully Implemented per PRD:**
 - Authentication system (JWT)
+- **Refresh token system with automatic rotation**
 - User management (Admin CRUD)
 - Payment submission with proof upload
 - Payment verification workflow
@@ -258,12 +269,267 @@ backend/
 - Auto savings account creation
 - Balance validation
 
+---
+
+## 🔄 Refresh Token Implementation Details
+
+### Overview
+The refresh token system allows users to obtain new access tokens without re-authenticating, improving user experience while maintaining security. Access tokens now expire in **15 minutes**, while refresh tokens last **30 days**.
+
+### Architecture
+
+#### 1. **Database Schema**
+A new `RefreshToken` model has been added to track all active refresh tokens:
+- Token hashing for secure storage (SHA-256)
+- Token chaining for rotation tracking
+- User agent tracking for audit trail
+- Automatic cascading delete on user deletion
+
+#### 2. **Token Rotation**
+Every time a refresh token is used:
+1. The old token is marked as "replaced"
+2. A new refresh token is issued
+3. Both tokens are linked in the database
+4. This prevents token replay attacks
+
+#### 3. **Token Theft Detection**
+If a replaced token is used again (indicates theft):
+- The entire token family is automatically revoked
+- User must login again
+- Security event is logged in database
+
+#### 4. **Cookie-Based Storage**
+Refresh tokens are stored in httpOnly cookies:
+- **httpOnly: true** - Prevents XSS attacks
+- **secure: true** (production) - Only sent over HTTPS
+- **sameSite: strict** - Prevents CSRF attacks
+- **maxAge: 30 days** - Matches token expiration
+
+### New Environment Variables
+```env
+# Access Token (short-lived)
+JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
+JWT_EXPIRES_IN="15m"
+
+# Refresh Token (long-lived)
+REFRESH_TOKEN_SECRET="your-super-secret-refresh-token-key-change-this-in-production"
+REFRESH_TOKEN_EXPIRES_IN="30d"
+REFRESH_TOKEN_COOKIE_NAME="refresh_token"
+```
+
+### New Files Created
+```
+src/auth/
+├── refresh-token.service.ts       # Core refresh token logic
+├── dto/
+│   ├── refresh-token.dto.ts       # Refresh token validation
+│   └── auth-response.dto.ts       # Auth response interfaces
+```
+
+### API Endpoints
+
+#### 1. **Login** - `POST /api/auth/login`
+**Request:**
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "id": "uuid-here",
+    "name": "John Doe",
+    "email": "user@example.com",
+    "role": "ANGGOTA"
+  }
+}
+```
+**Note:** The refresh token is set as an httpOnly cookie (not returned in body).
+
+**Cookie Set:**
+```
+Set-Cookie: refresh_token=eyJhbGciOiJIUzI1NiIs...; Path=/api/auth; HttpOnly; Secure; SameSite=Strict; Max-Age=2592000
+```
+
+---
+
+#### 2. **Refresh Access Token** - `POST /api/auth/refresh`
+**Request:**
+```json
+{
+  "refresh_token": "eyJhbGciOiJIUzI1NiIs..."
+}
+```
+*Note: In production, this is automatically sent via cookie.*
+
+**Response (200 OK):**
+```json
+{
+  "access_token": "new-eyJhbGciOiJIUzI1NiIs..."
+}
+```
+
+**New Cookie Set:**
+```
+Set-Cookie: refresh_token=new-token-here; Path=/api/auth; HttpOnly; Secure; SameSite=Strict; Max-Age=2592000
+```
+
+---
+
+#### 3. **Logout** - `POST /api/auth/logout`
+**Request:**
+```json
+{
+  "refresh_token": "eyJhbGciOiJIUzI1NiIs..."
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "message": "Logged out successfully"
+}
+```
+
+**Cookie Cleared:**
+```
+Set-Cookie: refresh_token=; Path=/api/auth; HttpOnly; Secure; SameSite=Strict; Max-Age=0
+```
+
+---
+
+#### 4. **Logout All Devices** - `POST /api/auth/logout-all`
+**Headers Required:**
+```
+Authorization: Bearer <access_token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "message": "Logged out from all devices successfully"
+}
+```
+
+**Cookie Cleared:**
+```
+Set-Cookie: refresh_token=; Path=/api/auth; HttpOnly; Secure; SameSite=Strict; Max-Age=0
+```
+
+---
+
+### Frontend Integration Example
+
+#### Login Flow
+```javascript
+// 1. Login
+const loginResponse = await fetch('http://localhost:3000/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include', // Important: enables cookies
+  body: JSON.stringify({
+    email: 'user@example.com',
+    password: 'password123'
+  })
+});
+
+const data = await loginResponse.json();
+// data.access_token - store in memory/state
+// Refresh token is automatically stored as cookie
+
+// 2. Make authenticated requests
+const profileResponse = await fetch('http://localhost:3000/api/auth/me', {
+  headers: {
+    'Authorization': `Bearer ${data.access_token}`
+  },
+  credentials: 'include' // Include cookies
+});
+```
+
+#### Token Refresh Flow
+```javascript
+// When access token expires (401 response)
+async function refreshToken() {
+  const response = await fetch('http://localhost:3000/api/auth/refresh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      refresh_token: 'token-from-cookie'
+    })
+  });
+  
+  const data = await response.json();
+  return data.access_token;
+}
+
+// Or use an Axios interceptor
+axiosInstance.interceptors.response.use(
+  response => response,
+  async error => {
+    if (error.response.status === 401) {
+      const { data } = await axios.post(
+        '/api/auth/refresh',
+        { refresh_token: '' },
+        { withCredentials: true }
+      );
+      
+      // Retry original request with new token
+      error.config.headers.Authorization = `Bearer ${data.access_token}`;
+      return axiosInstance(error.config);
+    }
+    return Promise.reject(error);
+  }
+);
+```
+
+#### Logout Flow
+```javascript
+// Single device logout
+await fetch('http://localhost:3000/api/auth/logout', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include',
+  body: JSON.stringify({ refresh_token: '' })
+});
+
+// Logout from all devices
+await fetch('http://localhost:3000/api/auth/logout-all', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${accessToken}`
+  },
+  credentials: 'include'
+});
+```
+
+---
+
+### Security Features
+
+1. **Token Rotation** - Each refresh issues new token, old one is marked as replaced
+2. **Token Hashing** - Tokens are hashed (SHA-256) before database storage
+3. **Theft Detection** - Reuse of replaced tokens triggers automatic revocation
+4. **HttpOnly Cookies** - Prevents XSS token theft
+5. **Short Access Token Life** - 15 minutes limits exposure window
+6. **Separate Secrets** - Access and refresh tokens use different signing keys
+7. **User Agent Tracking** - Audit trail of login locations/devices
+8. **Cascade Revocation** - Can revoke all user tokens instantly
+
+---
+
 ### 📊 Technical Specifications
 
 - **Framework**: NestJS v11
 - **Database**: PostgreSQL
 - **ORM**: Prisma v7.7.0
-- **Authentication**: JWT (passport-jwt)
+- **Authentication**: JWT with refresh token rotation
+- **Token Storage**: HttpOnly cookies + database with hashing
 - **Password Hashing**: bcrypt
 - **Validation**: class-validator with global pipe
 - **File Upload**: Multer with disk storage
@@ -279,15 +545,21 @@ backend/
 4. **Database**: Uses Prisma 7 with new config approach
 5. **Files**: Uploads stored in `/uploads` directory (gitignored)
 6. **Passwords**: Default credentials in seed script - MUST change after first login
+7. **Refresh Tokens**: Require database migration - run `npx prisma db push` or `npx prisma migrate dev`
+8. **Token Expiration**: Access tokens expire in 15 minutes, refresh tokens in 30 days
+9. **Cookie Security**: Refresh tokens use httpOnly, secure (production), sameSite cookies
 
 ### 🎓 For Frontend Integration
 
 Base URL: `http://localhost:3000/api`
 
 **Authentication Flow:**
-1. POST to `/auth/login` with email/password
-2. Store returned `access_token`
-3. Add header to all requests: `Authorization: Bearer <token>`
+1. POST to `/auth/login` with email/password (credentials: 'include' for cookies)
+2. Store returned `access_token` in memory/state
+3. Refresh token is automatically stored as httpOnly cookie
+4. Add header to all requests: `Authorization: Bearer <access_token>`
+5. When access token expires (401), POST to `/auth/refresh` with refresh token
+6. New access token + refresh token are returned automatically
 
 **File Upload:**
 - Use `multipart/form-data`

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getCurrentUser, formatCurrency, formatDate } from "@/lib/api-helpers";
 import {
   fetchAdminDashboard,
@@ -1079,6 +1080,7 @@ function AnggotaDashboard({ userName }: { userName: string }) {
 }
 
 export default function HomePage() {
+  const router = useRouter();
   const [role, setRole] = useState<UserRole>(null);
   const [userName, setUserName] = useState<string>("");
 
@@ -1087,6 +1089,10 @@ export default function HomePage() {
     if (user) {
       setRole(user.role);
       setUserName(user.name || "User");
+    } else {
+      // Redirect to login if not authenticated
+      router.push("/auth/sign-in");
+      router.refresh();
     }
   }, []);
 
