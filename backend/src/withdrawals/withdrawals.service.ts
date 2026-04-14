@@ -168,14 +168,19 @@ export class WithdrawalsService {
       include: { user: true },
     });
 
-    console.log('[WithdrawalsService] Withdrawal found:', withdrawal ? withdrawal.id : 'NOT FOUND');
+    console.log(
+      '[WithdrawalsService] Withdrawal found:',
+      withdrawal ? withdrawal.id : 'NOT FOUND',
+    );
 
     if (!withdrawal) {
       throw new NotFoundException('Withdrawal not found');
     }
 
     if (withdrawal.status !== 'PENDING') {
-      throw new BadRequestException(`Withdrawal has already been processed (current status: ${withdrawal.status})`);
+      throw new BadRequestException(
+        `Withdrawal has already been processed (current status: ${withdrawal.status})`,
+      );
     }
 
     // Update withdrawal status and decrement savings in a transaction

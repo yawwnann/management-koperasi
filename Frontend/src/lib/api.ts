@@ -40,6 +40,8 @@ export const authApi = {
       if (data.access_token) {
         if (typeof window !== "undefined") {
           localStorage.setItem("auth_token", data.access_token);
+          // Set cookie for Next.js middleware (expires in 15 minutes to match backend)
+          document.cookie = `auth_token=${data.access_token}; path=/; max-age=900; SameSite=Lax`;
           if (data.user) {
             localStorage.setItem("current_user", JSON.stringify(data.user));
           }
@@ -79,6 +81,8 @@ export const authApi = {
     if (data.access_token) {
       if (typeof window !== "undefined") {
         localStorage.setItem("auth_token", data.access_token);
+        // Set cookie for Next.js middleware (expires in 15 minutes to match backend)
+        document.cookie = `auth_token=${data.access_token}; path=/; max-age=900; SameSite=Lax`;
       }
     }
 
@@ -102,8 +106,10 @@ export const authApi = {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      // Always clear local storage
+      // Always clear local storage and cookie
       if (typeof window !== "undefined") {
+        document.cookie =
+          "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
         localStorage.removeItem("auth_token");
         localStorage.removeItem("current_user");
       }
@@ -119,8 +125,10 @@ export const authApi = {
     } catch (error) {
       console.error("Logout all error:", error);
     } finally {
-      // Always clear local storage
+      // Always clear local storage and cookie
       if (typeof window !== "undefined") {
+        document.cookie =
+          "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
         localStorage.removeItem("auth_token");
         localStorage.removeItem("current_user");
       }
