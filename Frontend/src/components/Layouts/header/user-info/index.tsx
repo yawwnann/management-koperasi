@@ -149,7 +149,7 @@ export function UserInfo() {
           </Link>
 
           <Link
-            href={"/pages/settings"}
+            href={"/settings"}
             onClick={() => setIsOpen(false)}
             className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[9px] hover:bg-gray-2 hover:text-dark dark:hover:bg-dark-3 dark:hover:text-white"
           >
@@ -182,20 +182,35 @@ export function UserInfo() {
             {/* Modal Header */}
             <div className="mb-4 flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-900/30">
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
                 </svg>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-dark dark:text-white">Konfirmasi Logout</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Apakah Anda yakin ingin keluar?</p>
+                <h3 className="text-lg font-semibold text-dark dark:text-white">
+                  Konfirmasi Logout
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Apakah Anda yakin ingin keluar?
+                </p>
               </div>
             </div>
 
             {/* Modal Body */}
             <div className="mb-6 rounded-lg bg-gray-50 p-4 dark:bg-gray-800">
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                Anda akan keluar dari sesi saat ini dan perlu login kembali untuk mengakses akun Anda.
+                Anda akan keluar dari sesi saat ini dan perlu login kembali
+                untuk mengakses akun Anda.
               </p>
             </div>
 

@@ -78,7 +78,7 @@ function VerifikasiPenarikanContent() {
     setProcessing(true);
     try {
       await withdrawalsApi.approve(selectedWithdrawal.id, {
-        approved: true,
+        status: "APPROVED",
         rejectionReason: rejectionReason || undefined,
       });
 
@@ -99,7 +99,7 @@ function VerifikasiPenarikanContent() {
     setProcessing(true);
     try {
       await withdrawalsApi.approve(selectedWithdrawal.id, {
-        approved: false,
+        status: "REJECTED",
         rejectionReason: rejectionReason || "Tidak ada alasan",
       });
 

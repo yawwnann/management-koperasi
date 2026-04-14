@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenService } from './refresh-token.service';
 import { LoginHistoryService } from './login-history.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -17,6 +18,7 @@ export class AuthService {
     private jwtService: JwtService,
     private refreshTokenService: RefreshTokenService,
     private loginHistoryService: LoginHistoryService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -193,6 +195,14 @@ export class AuthService {
 
     // Revoke all refresh tokens (force re-login on all devices)
     await this.refreshTokenService.revokeAllUserTokens(userId);
+
+    // Send notification to user about password change
+    await this.notificationsService.create({
+      type: 'system',
+      title: 'Password Berubah',
+      message: 'Password akun Anda telah berhasil diubah. Jika ini bukan tindakan Anda, segera hubungi admin.',
+      userId,
+    });
 
     return { message: 'Password berhasil diubah' };
   }

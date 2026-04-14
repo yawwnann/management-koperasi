@@ -1368,7 +1368,7 @@ export async function apiHandler(
     if (endpoint === "/payments" && method === "POST") {
       return handleCreatePayment(data, isFormData);
     }
-    if (endpoint.includes("/approve") && method === "PATCH") {
+    if (endpoint.startsWith("/payments/") && endpoint.includes("/approve") && method === "PATCH") {
       const id = endpoint.split("/")[2];
       return handleApprovePayment(id, data);
     }
@@ -1388,7 +1388,7 @@ export async function apiHandler(
     if (endpoint === "/withdrawals" && method === "POST") {
       return handleCreateWithdrawal(data);
     }
-    if (endpoint.includes("/approve") && method === "PATCH") {
+    if (endpoint.startsWith("/withdrawals/") && endpoint.includes("/approve") && method === "PATCH") {
       const id = endpoint.split("/")[2];
       return handleApproveWithdrawal(id, data);
     }

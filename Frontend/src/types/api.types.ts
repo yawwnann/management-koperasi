@@ -107,7 +107,7 @@ export interface CreateWithdrawalInput {
 }
 
 export interface ApproveWithdrawalInput {
-  approved: boolean;
+  status: 'APPROVED' | 'REJECTED';
   rejectionReason?: string;
 }
 

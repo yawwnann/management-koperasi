@@ -12,37 +12,47 @@ import { ApiResponse } from "@/types/api.types";
 export const authApi = {
   login: async (email: string, password: string): Promise<ApiResponse> => {
     // Call login endpoint directly with credentials to receive refresh token cookie
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api";
-    const response = await fetch(`${baseUrl}/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include", // Important: receives refresh token cookie
-      body: JSON.stringify({ email, password }),
-    });
+    const baseUrl =
+      process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api";
+    try {
+      const response = await fetch(`${baseUrl}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include", // Important: receives refresh token cookie
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || "Login failed");
-    }
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { message: "Login failed" };
+        }
+        return { success: false, message: errorData.message || "Login failed" };
+      }
 
-    const data = await response.json();
+      const data = await response.json();
 
-    // Store access_token and user data from response
-    if (data.access_token) {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("auth_token", data.access_token);
-        if (data.user) {
-          localStorage.setItem("current_user", JSON.stringify(data.user));
+      // Store access_token and user data from response
+      if (data.access_token) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("auth_token", data.access_token);
+          if (data.user) {
+            localStorage.setItem("current_user", JSON.stringify(data.user));
+          }
         }
       }
-    }
 
-    return {
-      success: true,
-      data: data,
-    };
+      return {
+        success: true,
+        data: data,
+      };
+    } catch (err: any) {
+      return { success: false, message: err.message || "Network Error" };
+    }
   },
 
   refresh: async (): Promise<ApiResponse> => {
@@ -55,7 +65,7 @@ export const authApi = {
           "Content-Type": "application/json",
         },
         credentials: "include", // Sends refresh token cookie
-      }
+      },
     );
 
     if (!response.ok) {

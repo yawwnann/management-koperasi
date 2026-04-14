@@ -1,7 +1,15 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
@@ -9,7 +17,9 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
-  async getNotifications(@Request() req) {
+  async getNotifications(
+    @Request() req: { user: { sub: string; role: string } },
+  ) {
     const notifications = await this.notificationsService.getUserNotifications(
       req.user.sub,
       req.user.role,
@@ -21,11 +31,13 @@ export class NotificationsController {
   }
 
   @Get('unread-count')
-  async getUnreadCount(@Request() req) {
-    const count = this.notificationsService.getUnreadCount(
+  async getUnreadCount(
+    @Request() req: { user: { sub: string; role: string } },
+  ) {
+    const count = await (this.notificationsService.getUnreadCount(
       req.user.sub,
       req.user.role,
-    );
+    ) as Promise<number>);
     return {
       success: true,
       data: { count },
@@ -42,8 +54,8 @@ export class NotificationsController {
   }
 
   @Post('read-all')
-  async markAllAsRead(@Request() req) {
-    await this.notificationsService.markAllAsRead(req.user.sub);
+  async markAllAsRead(@Request() req: { user: { sub: string; role: string } }) {
+    await this.notificationsService.markAllAsRead(req.user.sub, req.user.role);
     return {
       success: true,
       message: 'All notifications marked as read',
@@ -53,7 +65,9 @@ export class NotificationsController {
   // Internal endpoint for creating notifications (should be called from other services)
   @Post()
   async create(@Body() createNotificationDto: CreateNotificationDto) {
-    const notification = await this.notificationsService.create(createNotificationDto);
+    const notification = await this.notificationsService.create(
+      createNotificationDto,
+    );
     return {
       success: true,
       data: notification,

@@ -307,36 +307,67 @@ export class DashboardService {
         approvedAt: item.updatedAt,
       }));
 
-    // Recent alerts (mock data for now)
-    const recentAlerts = [
-      {
-        id: 1,
+    // Recent alerts (dynamic data)
+    const recentAlerts: any[] = [];
+    let alertId = 1;
+
+    if (pendingWithdrawals > 0) {
+      recentAlerts.push({
+        id: alertId++,
         type: 'penarikan',
         message: 'Penarikan Tertunda',
-        detail: `${pendingWithdrawals} penarikan menunggu verifikasi`,
-        time: 'Baru saja',
+        detail: `Terdapat ${pendingWithdrawals} penarikan menunggu verifikasi`,
+        time: 'Sekarang',
         status: 'pending' as const,
-      },
-      {
-        id: 2,
+      });
+    }
+
+    if (pendingPayments > 0) {
+      recentAlerts.push({
+        id: alertId++,
+        type: 'pembayaran',
+        message: 'Pembayaran Tertunda',
+        detail: `Terdapat ${pendingPayments} pembayaran menunggu verifikasi`,
+        time: 'Sekarang',
+        status: 'pending' as const,
+      });
+    }
+
+    const newestUser = [...users].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )[0];
+    if (newestUser) {
+      const hoursAgo = Math.floor(
+        (new Date().getTime() - new Date(newestUser.createdAt).getTime()) /
+          (1000 * 60 * 60),
+      );
+      const timeStr =
+        hoursAgo < 1
+          ? 'Baru saja'
+          : hoursAgo < 24
+            ? `${hoursAgo} jam yang lalu`
+            : `${Math.floor(hoursAgo / 24)} hari yang lalu`;
+      recentAlerts.push({
+        id: alertId++,
         type: 'member',
         message: 'Pendaftaran Anggota Baru',
-        detail:
-          users.length > 0
-            ? `${users[users.length - 1]?.name || 'Anggota'} telah bergabung ke KOPMA`
-            : 'Belum ada anggota baru',
-        time: '2 jam yang lalu',
+        detail: `${newestUser.name || 'Anggota'} telah bergabung ke KOPMA`,
+        time: timeStr,
         status: 'success' as const,
-      },
-      {
-        id: 3,
-        type: 'report',
-        message: 'Laporan Bulanan Tersedia',
-        detail: 'Laporan keuangan untuk bulan ini telah dibuat',
-        time: '5 jam yang lalu',
+      });
+    }
+
+    if (recentAlerts.length === 0) {
+      recentAlerts.push({
+        id: alertId++,
+        type: 'info',
+        message: 'Semua Terkendali',
+        detail: 'Tidak ada tugas yang menunggu saat ini',
+        time: 'Sekarang',
         status: 'info' as const,
-      },
-    ];
+      });
+    }
 
     // Payment trend (last 6 months)
     const months: string[] = [];

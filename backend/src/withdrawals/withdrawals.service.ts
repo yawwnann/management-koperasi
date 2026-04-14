@@ -9,6 +9,7 @@ import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
 import { ApproveWithdrawalDto } from './dto/approve-withdrawal.dto';
 import { EmailService } from '../email/email.service';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class WithdrawalsService {
@@ -16,6 +17,7 @@ export class WithdrawalsService {
     private prisma: PrismaService,
     private emailService: EmailService,
     private notificationsGateway: NotificationsGateway,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(userId: string, createWithdrawalDto: CreateWithdrawalDto) {
@@ -59,6 +61,15 @@ export class WithdrawalsService {
       userName: withdrawal.user.name,
       amount: Number(withdrawal.nominal),
       status: withdrawal.status,
+    });
+
+    // Create notification for admins via REST API
+    await this.notificationsService.create({
+      type: 'withdrawal',
+      title: 'Penarikan Baru',
+      message: `${withdrawal.user.name} mengajukan penarikan sebesar Rp${Number(withdrawal.nominal).toLocaleString('id-ID')}`,
+      actionUrl: `/admin/verifikasi-penarikan`,
+      isAdminNotification: true,
     });
 
     // Notify Admins via Email
@@ -150,17 +161,21 @@ export class WithdrawalsService {
     approveWithdrawalDto: ApproveWithdrawalDto,
     adminId: string,
   ) {
+    console.log('[WithdrawalsService] Approve called with ID:', withdrawalId);
+
     const withdrawal = await this.prisma.withdrawal.findUnique({
       where: { id: withdrawalId },
       include: { user: true },
     });
+
+    console.log('[WithdrawalsService] Withdrawal found:', withdrawal ? withdrawal.id : 'NOT FOUND');
 
     if (!withdrawal) {
       throw new NotFoundException('Withdrawal not found');
     }
 
     if (withdrawal.status !== 'PENDING') {
-      throw new BadRequestException('Withdrawal has already been processed');
+      throw new BadRequestException(`Withdrawal has already been processed (current status: ${withdrawal.status})`);
     }
 
     // Update withdrawal status and decrement savings in a transaction
@@ -208,6 +223,15 @@ export class WithdrawalsService {
         status: updatedWithdrawal.status,
       },
     );
+
+    // Create notification for user via REST API
+    await this.notificationsService.create({
+      type: 'withdrawal',
+      title: `Penarikan ${updatedWithdrawal.status === 'APPROVED' ? 'Disetujui' : 'Ditolak'}`,
+      message: `Penarikan Anda sebesar Rp${Number(updatedWithdrawal.nominal).toLocaleString('id-ID')} telah ${updatedWithdrawal.status === 'APPROVED' ? 'disetujui' : 'ditolak'}`,
+      actionUrl: `/penarikan/riwayat`,
+      userId: updatedWithdrawal.userId,
+    });
 
     // Notify User via Email
     this.emailService.sendWithdrawalNotification(

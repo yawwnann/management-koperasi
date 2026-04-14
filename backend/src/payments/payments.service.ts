@@ -58,7 +58,7 @@ export class PaymentsService {
       type: 'payment',
       title: 'Pembayaran Baru',
       message: `${payment.user.name} mengajukan pembayaran sebesar Rp${Number(payment.nominal).toLocaleString('id-ID')}`,
-      actionUrl: `/admin/verifikasi-pembayaran/${payment.id}`,
+      actionUrl: `/admin/verifikasi-pembayaran`,
       isAdminNotification: true,
     });
 
@@ -69,7 +69,7 @@ export class PaymentsService {
     });
 
     for (const admin of admins) {
-      this.emailService.sendAdminPaymentNotification(
+      await this.emailService.sendAdminPaymentNotification(
         admin.email,
         payment.user.name,
         Number(payment.nominal),
@@ -107,7 +107,7 @@ export class PaymentsService {
 
     // Add status filter
     if (status) {
-      where.status = status as any;
+      where.status = status as 'PENDING' | 'APPROVED' | 'REJECTED';
     }
 
     if (role === 'ADMIN') {
@@ -151,17 +151,26 @@ export class PaymentsService {
     approvePaymentDto: ApprovePaymentDto,
     adminId: string,
   ) {
+    console.log('[PaymentsService] Approve called with ID:', paymentId);
+
     const payment = await this.prisma.payment.findUnique({
       where: { id: paymentId },
       include: { user: true },
     });
+
+    console.log(
+      '[PaymentsService] Payment found:',
+      payment ? payment.id : 'NOT FOUND',
+    );
 
     if (!payment) {
       throw new NotFoundException('Payment not found');
     }
 
     if (payment.status !== 'PENDING') {
-      throw new BadRequestException('Payment has already been processed');
+      throw new BadRequestException(
+        `Payment has already been processed (current status: ${payment.status})`,
+      );
     }
 
     // Update payment status
@@ -212,12 +221,12 @@ export class PaymentsService {
       type: 'payment',
       title: `Pembayaran ${updatedPayment.status === 'APPROVED' ? 'Disetujui' : 'Ditolak'}`,
       message: `Pembayaran Anda sebesar Rp${Number(updatedPayment.nominal).toLocaleString('id-ID')} telah ${updatedPayment.status === 'APPROVED' ? 'disetujui' : 'ditolak'}`,
-      actionUrl: `/pembayaran/riwayat/${updatedPayment.id}`,
+      actionUrl: `/pembayaran/riwayat`,
       userId: updatedPayment.userId,
     });
 
     // Send email notification to the user
-    this.emailService.sendPaymentNotification(
+    await this.emailService.sendPaymentNotification(
       updatedPayment.user.email,
       updatedPayment.user.name,
       Number(updatedPayment.nominal),

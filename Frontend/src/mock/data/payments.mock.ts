@@ -143,7 +143,7 @@ export function approvePayment(
 
   const updatedPayment: Payment = {
     ...payment,
-    status: input.approved ? "APPROVED" : "REJECTED",
+    status: input.status,
     approvedBy: "user-1",
     approvedAt: new Date().toISOString(),
     rejectionReason: input.rejectionReason,

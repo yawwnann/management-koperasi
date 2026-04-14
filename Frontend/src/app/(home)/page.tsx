@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { getCurrentUser, formatCurrency, formatDate } from "@/lib/api-helpers";
 import {
   fetchAdminDashboard,
@@ -265,9 +266,12 @@ function AdminDashboard({ userName }: { userName: string }) {
               <h3 className="text-lg font-semibold text-dark dark:text-white">
                 Pemberitahuan Terbaru
               </h3>
-              <button className="flex-shrink-0 text-sm text-primary hover:underline">
+              <Link
+                href="/settings#notifications"
+                className="flex-shrink-0 text-sm text-primary hover:underline"
+              >
                 Lihat Semua
-              </button>
+              </Link>
             </div>
             <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto pr-2">
               {data.recentAlerts.map(
@@ -349,12 +353,26 @@ function AdminDashboard({ userName }: { userName: string }) {
                       <div className="mt-2 flex gap-2">
                         {alert.status === "pending" && (
                           <>
-                            <button className="rounded-lg bg-green-500 px-3 py-1 text-xs font-medium text-white hover:bg-green-600">
+                            <Link
+                              href={
+                                alert.type === "penarikan"
+                                  ? "/admin/verifikasi-penarikan"
+                                  : "/admin/verifikasi-pembayaran"
+                              }
+                              className="block rounded-lg bg-green-500 px-3 py-1 text-center text-xs font-medium text-white hover:bg-green-600"
+                            >
                               Setujui
-                            </button>
-                            <button className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300">
+                            </Link>
+                            <Link
+                              href={
+                                alert.type === "penarikan"
+                                  ? "/admin/verifikasi-penarikan"
+                                  : "/admin/verifikasi-pembayaran"
+                              }
+                              className="block rounded-lg bg-gray-100 px-3 py-1 text-center text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300"
+                            >
                               Detail
-                            </button>
+                            </Link>
                           </>
                         )}
                       </div>
@@ -571,196 +589,6 @@ function AdminDashboard({ userName }: { userName: string }) {
       <div className="mt-6">
         <MemberActivityChart data={data.memberActivity} />
       </div>
-
-      {/* Verifikasi Pembayaran Terbaru */}
-      <div className="mt-6 rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-dark dark:text-white">
-            Verifikasi Pembayaran Terbaru
-          </h3>
-          <div className="flex gap-2">
-            <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-green-600">
-              Status: All
-            </button>
-            <button className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300">
-              More Filters
-            </button>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-stroke dark:border-strokedark">
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-400">
-                  ID Transaksi
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-400">
-                  Nama Anggota
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-400">
-                  Tanggal
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-400">
-                  Jumlah
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-400">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-500 dark:text-gray-400">
-                  Aksi
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-stroke hover:bg-gray-50 dark:border-strokedark dark:hover:bg-gray-800/50">
-                <td className="px-4 py-4 text-sm font-medium text-dark dark:text-white">
-                  #TRX-08221
-                </td>
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/30">
-                      BP
-                    </div>
-                    <span className="text-sm text-dark dark:text-white">
-                      Bambang Pamungkas
-                    </span>
-                  </div>
-                </td>
-                <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  22 Agu 2023
-                </td>
-                <td className="px-4 py-4 text-sm font-medium text-dark dark:text-white">
-                  Rp 500.000
-                </td>
-                <td className="px-4 py-4">
-                  <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                    Approved
-                  </span>
-                </td>
-                <td className="px-4 py-4">
-                  <button className="text-gray-400 hover:text-dark dark:hover:text-white">
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                      />
-                    </svg>
-                  </button>
-                </td>
-              </tr>
-              <tr className="border-b border-stroke hover:bg-gray-50 dark:border-strokedark dark:hover:bg-gray-800/50">
-                <td className="px-4 py-4 text-sm font-medium text-dark dark:text-white">
-                  #TRX-08222
-                </td>
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/30">
-                      RR
-                    </div>
-                    <span className="text-sm text-dark dark:text-white">
-                      Rina Rahmawati
-                    </span>
-                  </div>
-                </td>
-                <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  23 Agu 2023
-                </td>
-                <td className="px-4 py-4 text-sm font-medium text-dark dark:text-white">
-                  Rp 1.250.000
-                </td>
-                <td className="px-4 py-4">
-                  <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-                    Pending
-                  </span>
-                </td>
-                <td className="px-4 py-4">
-                  <button className="text-gray-400 hover:text-dark dark:hover:text-white">
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                      />
-                    </svg>
-                  </button>
-                </td>
-              </tr>
-              <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                <td className="px-4 py-4 text-sm font-medium text-dark dark:text-white">
-                  #TRX-08223
-                </td>
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30">
-                      DS
-                    </div>
-                    <span className="text-sm text-dark dark:text-white">
-                      Dedi Setiawan
-                    </span>
-                  </div>
-                </td>
-                <td className="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">
-                  23 Agu 2023
-                </td>
-                <td className="px-4 py-4 text-sm font-medium text-dark dark:text-white">
-                  Rp 250.000
-                </td>
-                <td className="px-4 py-4">
-                  <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                    Approved
-                  </span>
-                </td>
-                <td className="px-4 py-4">
-                  <button className="text-gray-400 hover:text-dark dark:hover:text-white">
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                      />
-                    </svg>
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-4 flex items-center justify-between">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Showing 3 of 128 transactions
-          </p>
-          <div className="flex gap-2">
-            <button className="rounded-lg border border-stroke px-3 py-1 text-sm text-gray-500 hover:bg-gray-50 dark:border-strokedark dark:text-gray-400 dark:hover:bg-gray-800">
-              1
-            </button>
-            <button className="rounded-lg bg-primary px-3 py-1 text-sm text-white">
-              2
-            </button>
-            <button className="rounded-lg border border-stroke px-3 py-1 text-sm text-gray-500 hover:bg-gray-50 dark:border-strokedark dark:text-gray-400 dark:hover:bg-gray-800">
-              3
-            </button>
-          </div>
-        </div>
-      </div>
     </>
   );
 }
@@ -806,12 +634,26 @@ function AnggotaDashboard({ userName }: { userName: string }) {
     return (
       <div className="rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
         <div className="flex items-center gap-3">
-          <svg className="h-6 w-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            className="h-6 w-6 text-red-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           <div>
-            <p className="text-lg font-semibold text-red-500">Terjadi Kesalahan</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{error || "Gagal memuat data dashboard."}</p>
+            <p className="text-lg font-semibold text-red-500">
+              Terjadi Kesalahan
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {error || "Gagal memuat data dashboard."}
+            </p>
           </div>
         </div>
       </div>
@@ -820,8 +662,10 @@ function AnggotaDashboard({ userName }: { userName: string }) {
 
   const getStatusBadge = (status: string) => {
     const statusColors: Record<string, string> = {
-      PENDING: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-      APPROVED: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+      PENDING:
+        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+      APPROVED:
+        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
       REJECTED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
     };
     const statusLabels: Record<string, string> = {
@@ -829,11 +673,15 @@ function AnggotaDashboard({ userName }: { userName: string }) {
       APPROVED: "Disetujui",
       REJECTED: "Ditolak",
     };
-    const color = statusColors[status] || "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
+    const color =
+      statusColors[status] ||
+      "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
     const label = statusLabels[status] || status;
 
     return (
-      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${color}`}>
+      <span
+        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${color}`}
+      >
         {label}
       </span>
     );
@@ -844,8 +692,18 @@ function AnggotaDashboard({ userName }: { userName: string }) {
       title: "Total Saldo",
       value: formatCurrency(data.totalBalance),
       icon: (
-        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+        <svg
+          className="h-6 w-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+          />
         </svg>
       ),
       bgColor: "bg-blue-100 dark:bg-blue-900/30",
@@ -855,8 +713,18 @@ function AnggotaDashboard({ userName }: { userName: string }) {
       title: "Pembayaran Pending",
       value: data.pendingPayments.toString(),
       icon: (
-        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        <svg
+          className="h-6 w-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+          />
         </svg>
       ),
       bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
@@ -866,8 +734,18 @@ function AnggotaDashboard({ userName }: { userName: string }) {
       title: "Penarikan Pending",
       value: data.pendingWithdrawals.toString(),
       icon: (
-        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+        <svg
+          className="h-6 w-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+          />
         </svg>
       ),
       bgColor: "bg-orange-100 dark:bg-orange-900/30",
@@ -877,8 +755,18 @@ function AnggotaDashboard({ userName }: { userName: string }) {
       title: "Transaksi Disetujui",
       value: `${data.approvedPayments + data.approvedWithdrawals}`,
       icon: (
-        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          className="h-6 w-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
       ),
       bgColor: "bg-green-100 dark:bg-green-900/30",
@@ -887,10 +775,12 @@ function AnggotaDashboard({ userName }: { userName: string }) {
   ];
 
   // Transform recent activities to match admin dashboard format
-  const recentActivities = data.recentActivities.slice(0, 5).map((activity) => ({
-    ...activity,
-    userName: data.user.name,
-  }));
+  const recentActivities = data.recentActivities
+    .slice(0, 5)
+    .map((activity) => ({
+      ...activity,
+      userName: data.user.name,
+    }));
 
   return (
     <>
@@ -910,7 +800,9 @@ function AnggotaDashboard({ userName }: { userName: string }) {
             key={card.title}
             className="rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark"
           >
-            <div className={`flex h-12 w-12 items-center justify-center rounded-full ${card.bgColor} ${card.textColor}`}>
+            <div
+              className={`flex h-12 w-12 items-center justify-center rounded-full ${card.bgColor} ${card.textColor}`}
+            >
               {card.icon}
             </div>
             <div className="mt-4">
@@ -969,12 +861,32 @@ function AnggotaDashboard({ userName }: { userName: string }) {
                         }`}
                       >
                         {activity.type === "payment" ? (
-                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                            />
                           </svg>
                         ) : (
-                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                          <svg
+                            className="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                            />
                           </svg>
                         )}
                       </div>
@@ -983,7 +895,10 @@ function AnggotaDashboard({ userName }: { userName: string }) {
                           {activity.userName}
                         </p>
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                          {activity.type === "payment" ? "Pembayaran" : "Penarikan"} • {formatDate(activity.createdAt)}
+                          {activity.type === "payment"
+                            ? "Pembayaran"
+                            : "Penarikan"}{" "}
+                          • {formatDate(activity.createdAt)}
                         </p>
                       </div>
                     </div>
@@ -991,13 +906,15 @@ function AnggotaDashboard({ userName }: { userName: string }) {
                       <p className="text-sm font-bold text-dark dark:text-white">
                         {formatCurrency(activity.amount)}
                       </p>
-                      <span className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                        activity.status === "PENDING"
-                          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                          : activity.status === "APPROVED"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                      }`}>
+                      <span
+                        className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                          activity.status === "PENDING"
+                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                            : activity.status === "APPROVED"
+                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                              : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                        }`}
+                      >
                         {activity.status === "PENDING"
                           ? "Pending"
                           : activity.status === "APPROVED"

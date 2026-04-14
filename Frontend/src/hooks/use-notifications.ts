@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { getCurrentUser, getAuthToken } from '@/lib/api-helpers';
+import { getCurrentUser } from '@/lib/api-helpers';
 import type { Notification } from '@/types/notification.types';
 
 interface UseNotificationsReturn {
@@ -23,7 +23,8 @@ export function useNotifications(): UseNotificationsReturn {
   const loadNotifications = useCallback(async () => {
     try {
       setIsLoading(true);
-      const token = getAuthToken();
+      if (typeof window === 'undefined') return;
+      const token = localStorage.getItem('auth_token');
       if (!token) return;
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/notifications`, {
@@ -48,7 +49,8 @@ export function useNotifications(): UseNotificationsReturn {
 
   const markAsRead = useCallback(async (id: string) => {
     try {
-      const token = getAuthToken();
+      if (typeof window === 'undefined') return;
+      const token = localStorage.getItem('auth_token');
       if (!token) return;
 
       const response = await fetch(
@@ -74,7 +76,8 @@ export function useNotifications(): UseNotificationsReturn {
 
   const markAllAsRead = useCallback(async () => {
     try {
-      const token = getAuthToken();
+      if (typeof window === 'undefined') return;
+      const token = localStorage.getItem('auth_token');
       if (!token) return;
 
       const response = await fetch(
@@ -99,51 +102,67 @@ export function useNotifications(): UseNotificationsReturn {
   // WebSocket connection
   useEffect(() => {
     const user = getCurrentUser();
-    if (!user) return;
+    if (!user || typeof window === 'undefined') return;
+    
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
 
-    const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api';
-    const baseURL = API_URL.replace('/api', '');
+      const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api';
+      const baseURL = API_URL.replace('/api', '');
 
-    const socket = io(`${baseURL}/notifications`, {
-      auth: {
-        token: getAuthToken(),
-      },
-      transports: ['websocket', 'polling'],
-    });
-
-    socket.on('connect', () => {
-      console.log('WebSocket connected');
-      setIsConnected(true);
-
-      // Subscribe to notifications
-      socket.emit('subscribe', {
-        userId: user.id,
-        role: user.role,
+      const socket = io(`${baseURL}/notifications`, {
+        query: {
+          token,
+        },
+        transports: ['websocket', 'polling'],
       });
-    });
 
-    socket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
-      setIsConnected(false);
-    });
+      socket.on('connect', () => {
+        console.log('WebSocket connected');
+        setIsConnected(true);
 
-    socket.on('notification', (data: Notification) => {
-      console.log('New notification received:', data);
-      setNotifications((prev) => [data, ...prev]);
-      setUnreadCount((prev) => prev + 1);
-    });
+        // Subscribe to notifications
+        socket.emit('subscribe', {
+          userId: user.id,
+          role: user.role,
+        });
+      });
 
-    socket.on('subscribed', (data) => {
-      console.log('Subscribed to notifications:', data);
-    });
+      socket.on('disconnect', () => {
+        console.log('WebSocket disconnected');
+        setIsConnected(false);
+      });
 
-    socketRef.current = socket;
+      // Handle real-time notification from WebSocket
+      socket.on('notification', (data: any) => {
+        console.log('New notification received via WebSocket:', data);
+        // Convert WebSocket payload to Notification format
+        const notification: Notification = {
+          id: data.data?.id || `notif_${Date.now()}`,
+          type: data.type,
+          title: `${data.type === 'payment' ? 'Pembayaran' : data.type === 'withdrawal' ? 'Penarikan' : 'Sistem'} ${data.action === 'created' ? 'Baru' : data.action === 'approved' ? 'Disetujui' : 'Ditolak'}`,
+          message: `${data.data?.userName || 'User'} - Rp${Number(data.data?.amount || 0).toLocaleString('id-ID')}`,
+          isRead: false,
+          actionUrl: `/${data.type}s/riwayat/${data.data?.id}`,
+          createdAt: new Date().toISOString(),
+        };
+        setNotifications((prev) => [notification, ...prev]);
+        setUnreadCount((prev) => prev + 1);
+      });
 
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
-    };
+      socket.on('subscribed', (data) => {
+        console.log('Subscribed to notifications:', data);
+      });
+
+      socketRef.current = socket;
+
+      return () => {
+        if (socketRef.current) {
+          socketRef.current.disconnect();
+        }
+      };
+    }
   }, []);
 
   // Load initial notifications

@@ -7,11 +7,15 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async create(createUserDto: CreateUserDto) {
     // Check if email already exists
@@ -53,6 +57,15 @@ export class UsersService {
         userId: user.id,
         total: 0,
       },
+    });
+
+    // Create notification for admins about new member
+    await this.notificationsService.create({
+      type: 'system',
+      title: 'Anggota Baru Terdaftar',
+      message: `${user.name} telah terdaftar sebagai anggota baru`,
+      actionUrl: `/admin/anggota`,
+      isAdminNotification: true,
     });
 
     const { password: _, ...result } = user;
