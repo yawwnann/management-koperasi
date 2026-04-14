@@ -202,6 +202,14 @@ export const savingsApi = {
     return apiHandler("/savings/me", "GET");
   },
 
+  getSavingsBreakdown: (): Promise<ApiResponse> => {
+    return apiHandler("/savings/me/breakdown", "GET");
+  },
+
+  getSavingsChart: (): Promise<ApiResponse> => {
+    return apiHandler("/savings/me/chart", "GET");
+  },
+
   getAllSavings: (): Promise<ApiResponse> => {
     return apiHandler("/savings", "GET");
   },
@@ -226,8 +234,24 @@ export const profileApi = {
 // ==================== DASHBOARD ====================
 
 export const dashboardApi = {
-  getAdminDashboard: (): Promise<ApiResponse> => {
+  getDashboard: (): Promise<ApiResponse> => {
     return apiHandler("/dashboard", "GET");
+  },
+};
+
+// ==================== FAKULTAS ====================
+
+export const fakultasApi = {
+  getAllFakultas: (): Promise<ApiResponse> => {
+    return apiHandler("/fakultas", "GET");
+  },
+
+  getFakultasList: (): Promise<ApiResponse> => {
+    return apiHandler("/fakultas/list", "GET");
+  },
+
+  getJurusanByFakultas: (fakultas: string): Promise<ApiResponse> => {
+    return apiHandler("/fakultas/jurusan", "GET", undefined, { fakultas });
   },
 };
 

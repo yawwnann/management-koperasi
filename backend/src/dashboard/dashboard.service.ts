@@ -5,6 +5,198 @@ import { PrismaService } from '../prisma/prisma.service';
 export class DashboardService {
   constructor(private prisma: PrismaService) {}
 
+  async getUserDashboard(userId: string) {
+    // Fetch user-specific data in parallel
+    const [user, payments, withdrawals, saving] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          angkatan: true,
+          isActive: true,
+          createdAt: true,
+        },
+      }),
+      this.prisma.payment.findMany({
+        where: { userId },
+        include: {
+          verifier: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      }),
+      this.prisma.withdrawal.findMany({
+        where: { userId },
+        include: {
+          verifier: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+      }),
+      this.prisma.saving.findUnique({
+        where: { userId },
+      }),
+    ]);
+
+    // Calculate totals
+    const totalBalance = saving ? Number(saving.total) : 0;
+    const pendingPayments = payments.filter(
+      (p) => p.status === 'PENDING',
+    ).length;
+    const approvedPayments = payments.filter(
+      (p) => p.status === 'APPROVED',
+    ).length;
+    const rejectedPayments = payments.filter(
+      (p) => p.status === 'REJECTED',
+    ).length;
+    const pendingWithdrawals = withdrawals.filter(
+      (w) => w.status === 'PENDING',
+    ).length;
+    const approvedWithdrawals = withdrawals.filter(
+      (w) => w.status === 'APPROVED',
+    ).length;
+
+    // Recent activities (last 5 combined)
+    const recentActivities = [...payments, ...withdrawals]
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+      .slice(0, 5)
+      .map((item: any) => ({
+        id: item.id,
+        type: item.proofImage ? 'payment' : 'withdrawal',
+        amount: Number(item.nominal),
+        status: item.status,
+        createdAt: item.createdAt,
+        description: item.description || item.reason,
+      }));
+
+    // Savings breakdown by type
+    const savingsBreakdown = {
+      pokok: 0,
+      wajib: 0,
+      sukarela: 0,
+    };
+
+    const approvedPaymentsAll = await this.prisma.payment.findMany({
+      where: { userId, status: 'APPROVED' },
+      select: { nominal: true, description: true },
+    });
+
+    approvedPaymentsAll.forEach((payment) => {
+      const desc = (payment.description || '').toLowerCase();
+      const amount = Number(payment.nominal);
+
+      if (desc.includes('pokok')) {
+        savingsBreakdown.pokok += amount;
+      } else if (desc.includes('wajib')) {
+        savingsBreakdown.wajib += amount;
+      } else {
+        savingsBreakdown.sukarela += amount;
+      }
+    });
+
+    // Payment trend (last 6 months) - user specific
+    const months: string[] = [];
+    const monthNames = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
+    ];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      months.push(`${monthNames[d.getMonth()]} ${d.getFullYear()}`);
+    }
+
+    const paymentsByMonth = new Array(6).fill(0);
+    const withdrawalsByMonth = new Array(6).fill(0);
+
+    const allPayments = await this.prisma.payment.findMany({
+      where: { userId },
+      select: { nominal: true, createdAt: true },
+    });
+
+    const allWithdrawals = await this.prisma.withdrawal.findMany({
+      where: { userId },
+      select: { nominal: true, createdAt: true },
+    });
+
+    allPayments.forEach((payment) => {
+      const paymentDate = new Date(payment.createdAt);
+      for (let i = 0; i < 6; i++) {
+        const targetDate = new Date();
+        targetDate.setMonth(targetDate.getMonth() - (5 - i));
+        if (
+          paymentDate.getMonth() === targetDate.getMonth() &&
+          paymentDate.getFullYear() === targetDate.getFullYear()
+        ) {
+          paymentsByMonth[i] += Number(payment.nominal);
+          break;
+        }
+      }
+    });
+
+    allWithdrawals.forEach((withdrawal) => {
+      const withdrawalDate = new Date(withdrawal.createdAt);
+      for (let i = 0; i < 6; i++) {
+        const targetDate = new Date();
+        targetDate.setMonth(targetDate.getMonth() - (5 - i));
+        if (
+          withdrawalDate.getMonth() === targetDate.getMonth() &&
+          withdrawalDate.getFullYear() === targetDate.getFullYear()
+        ) {
+          withdrawalsByMonth[i] += Number(withdrawal.nominal);
+          break;
+        }
+      }
+    });
+
+    return {
+      user: {
+        name: user?.name,
+        email: user?.email,
+        angkatan: user?.angkatan,
+        memberSince: user?.createdAt,
+      },
+      totalBalance,
+      pendingPayments,
+      approvedPayments,
+      rejectedPayments,
+      pendingWithdrawals,
+      approvedWithdrawals,
+      recentActivities,
+      savingsBreakdown,
+      paymentTrend: {
+        labels: months,
+        payments: paymentsByMonth,
+        withdrawals: withdrawalsByMonth,
+      },
+    };
+  }
+
   async getAdminDashboard(userId: string) {
     // Fetch all data in parallel
     const [users, payments, withdrawals, savings] = await Promise.all([
@@ -214,7 +406,7 @@ export class DashboardService {
       .forEach((payment) => {
         const desc = (payment.description || '').toLowerCase();
         const amount = Number(payment.nominal);
-        
+
         if (desc.includes('pokok')) {
           savingsBreakdown.pokok += amount;
         } else if (desc.includes('wajib')) {

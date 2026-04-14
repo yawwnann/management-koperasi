@@ -47,13 +47,16 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          "max-w-[290px] overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-200 ease-linear dark:border-gray-800 dark:bg-gray-dark",
-          isMobile ? "fixed bottom-0 top-0 z-50" : "sticky top-0 h-screen",
-          isOpen ? "w-full" : "w-0",
+          "overflow-hidden border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-dark",
+          isMobile
+            ? "fixed bottom-0 left-0 top-0 z-50 w-[290px] transition-transform duration-300 ease-linear"
+            : "sticky top-0 h-screen w-[290px] shrink-0",
+          !isOpen && isMobile && "-translate-x-full",
         )}
         aria-label="Main navigation"
         aria-hidden={!isOpen}
         inert={!isOpen}
+        suppressHydrationWarning
       >
         <div className="flex h-full flex-col py-10 pl-[25px] pr-[7px]">
           <div className="relative pr-4.5">
@@ -65,14 +68,14 @@ export function Sidebar() {
               <Logo />
             </Link>
 
-            {isMobile && (
+            {/* Close button for mobile */}
+            {isMobile && isOpen && (
               <button
                 onClick={toggleSidebar}
-                className="absolute left-3/4 right-4.5 top-1/2 -translate-y-1/2 text-right"
+                className="absolute right-4.5 top-1/2 -translate-y-1/2"
               >
                 <span className="sr-only">Close Menu</span>
-
-                <ArrowLeftIcon className="ml-auto size-7" />
+                <ArrowLeftIcon className="size-7" />
               </button>
             )}
           </div>
@@ -81,7 +84,7 @@ export function Sidebar() {
           <div className="custom-scrollbar mt-6 flex-1 overflow-y-auto pr-3 min-[850px]:mt-10">
             {filteredNavData.map((section) => (
               <div key={section.label} className="mb-6">
-                <h2 className="mb-5 text-sm font-medium text-dark-4 dark:text-dark-6">
+                <h2 className="mb-5 text-sm font-medium text-dark-4 dark:text-dark-6 whitespace-nowrap">
                   {section.label}
                 </h2>
 
@@ -93,7 +96,7 @@ export function Sidebar() {
                           as="link"
                           href={item.url}
                           isActive={pathname === item.url}
-                          className="flex items-center gap-3 py-3"
+                          className="flex items-center gap-3 py-3 whitespace-nowrap"
                         >
                           <item.icon
                             className="size-6 shrink-0"

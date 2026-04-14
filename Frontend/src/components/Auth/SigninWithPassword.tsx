@@ -83,11 +83,13 @@ export default function SigninWithPassword() {
             onChange={handleChange}
             value={data.password}
             className="w-full rounded-lg border-[1.5px] border-stroke bg-transparent px-5.5 py-3 pr-12 outline-none transition focus:border-primary disabled:cursor-default disabled:bg-gray-2 data-[active=true]:border-primary dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary dark:disabled:bg-dark dark:data-[active=true]:border-primary"
+            suppressHydrationWarning
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            suppressHydrationWarning
           >
             {showPassword ? (
               <svg
@@ -157,6 +159,7 @@ export default function SigninWithPassword() {
         type="submit"
         disabled={loading}
         className="mb-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary p-3.5 font-medium text-white transition hover:bg-opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        suppressHydrationWarning
       >
         {loading ? (
           <>

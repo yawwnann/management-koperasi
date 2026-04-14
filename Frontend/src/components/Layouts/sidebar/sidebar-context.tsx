@@ -30,19 +30,26 @@ export function SidebarProvider({
   children: React.ReactNode;
   defaultOpen?: boolean;
 }) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
   const isMobile = useIsMobile();
+  // Initialize based on screen size
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return window.innerWidth >= 850 ? true : false;
+  });
 
   useEffect(() => {
-    if (isMobile) {
-      setIsOpen(false);
-    } else {
+    // On desktop, always keep sidebar open
+    // On mobile/tablet, allow toggle (start closed)
+    if (window.innerWidth >= 850) {
       setIsOpen(true);
     }
   }, [isMobile]);
 
   function toggleSidebar() {
-    setIsOpen((prev) => !prev);
+    // Only allow toggle on mobile/tablet
+    if (window.innerWidth < 850) {
+      setIsOpen((prev) => !prev);
+    }
   }
 
   return (

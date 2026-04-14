@@ -93,8 +93,8 @@ export const NAV_DATA = [
       },
       {
         title: "Settings",
-        url: "/pages/settings",
-        icon: Icons.Alphabet,
+        url: "/settings",
+        icon: Icons.FourCircle,
         roles: ["ADMIN", "ANGGOTA"],
         items: [],
       },

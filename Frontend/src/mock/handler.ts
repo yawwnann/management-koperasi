@@ -8,6 +8,96 @@ import * as mockData from "@/mock";
 import { getProfileByUserId, updateProfile } from "@/mock/data/profile.mock";
 import { ApiResponse, ApiError } from "@/types/api.types";
 
+// Fakultas data from backend JSON
+const FAKULTAS_DATA = {
+  universitas: "Universitas Ahmad Dahlan",
+  fakultas: [
+    {
+      nama: "Fakultas Agama Islam",
+      jurusan: [
+        "Ekonomi Syariah",
+        "Hukum Keluarga Islam",
+        "Pendidikan Agama Islam",
+        "Perbankan Syariah",
+      ],
+    },
+    {
+      nama: "Fakultas Psikologi",
+      jurusan: ["Psikologi"],
+    },
+    {
+      nama: "Fakultas Ekonomi dan Bisnis",
+      jurusan: [
+        "Akuntansi",
+        "Ekonomi Pembangunan",
+        "Manajemen",
+        "Perpajakan",
+      ],
+    },
+    {
+      nama: "Fakultas Keguruan dan Ilmu Pendidikan",
+      jurusan: [
+        "Bimbingan dan Konseling",
+        "Pendidikan Bahasa dan Sastra Indonesia",
+        "Pendidikan Bahasa Inggris",
+        "Pendidikan Guru PAUD",
+        "Pendidikan Guru Sekolah Dasar",
+        "Pendidikan Matematika",
+        "Pendidikan Pancasila dan Kewarganegaraan",
+        "Pendidikan Seni Drama Tari Musik",
+        "Pendidikan Teknik Informatika dan Komputer",
+        "Pendidikan Matematika",
+      ],
+    },
+    {
+      nama: "Fakultas Hukum",
+      jurusan: ["Ilmu Hukum"],
+    },
+    {
+      nama: "Fakultas Sastra, Budaya, dan Komunikasi",
+      jurusan: [
+        "Ilmu Komunikasi",
+        "Sastra Inggris",
+        "Seni Pertunjukan",
+      ],
+    },
+    {
+      nama: "Fakultas Sains dan Teknologi Terapan",
+      jurusan: [
+        "Biologi Terapan",
+        "Fisika Terapan",
+        "Matematika Terapan",
+        "Teknologi Informasi",
+      ],
+    },
+    {
+      nama: "Fakultas Farmasi",
+      jurusan: ["Farmasi"],
+    },
+    {
+      nama: "Fakultas Kesehatan Masyarakat",
+      jurusan: [
+        "Gizi",
+        "Kesehatan Masyarakat",
+      ],
+    },
+    {
+      nama: "Fakultas Teknologi Industri",
+      jurusan: [
+        "Teknik Industri",
+        "Teknik Kimia",
+        "Teknik Lingkungan",
+        "Teknik Material",
+        "Teknik Pertambangan",
+      ],
+    },
+    {
+      nama: "Fakultas Kedokteran",
+      jurusan: ["Pendidikan Dokter"],
+    },
+  ],
+};
+
 // Check if mock mode is enabled (accept several truthy string formats)
 const MOCK_FLAG = (process.env.NEXT_PUBLIC_MOCK ?? "").trim().toLowerCase();
 const USE_MOCK = ["true", "1", "yes", "on"].includes(MOCK_FLAG);
@@ -827,6 +917,99 @@ async function handleAllSavings(): Promise<ApiResponse> {
 }
 
 /**
+ * Handles savings breakdown
+ */
+async function handleSavingsBreakdown(): Promise<ApiResponse> {
+  if (USE_MOCK) {
+    await delay();
+    const mySavings = mockData.getMySavings(getAuthToken());
+    const balance = mySavings?.balance || 0;
+    const breakdown = {
+      pokok: Math.round(balance * 0.2),
+      wajib: Math.round(balance * 0.5),
+      sukarela: Math.round(balance * 0.3),
+    };
+    return createMockResponse({
+      total: balance,
+      breakdown,
+      details: [
+        { type: "Simpanan Pokok", amount: breakdown.pokok },
+        { type: "Simpanan Wajib", amount: breakdown.wajib },
+        { type: "Simpanan Sukarela", amount: breakdown.sukarela },
+      ],
+    });
+  }
+
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE_URL}/savings/me/breakdown`, {
+    method: "GET",
+    headers: createHeaders(token),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to fetch savings breakdown");
+  }
+
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
+}
+
+/**
+ * Handles savings chart data
+ */
+async function handleSavingsChart(): Promise<ApiResponse> {
+  if (USE_MOCK) {
+    await delay();
+    const mySavings = mockData.getMySavings(getAuthToken());
+    const balance = mySavings?.balance || 7594176;
+    
+    // Generate last 6 months labels
+    const months: string[] = [];
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      months.push(`${monthNames[d.getMonth()]} ${d.getFullYear()}`);
+    }
+
+    // Generate chart data with varying values (gradual increase with realistic progression)
+    const baseValues = [
+      Math.round(balance * 0.25 + Math.random() * 100000),  // 6 months ago: ~25%
+      Math.round(balance * 0.35 + Math.random() * 100000),  // 5 months ago: ~35%
+      Math.round(balance * 0.50 + Math.random() * 100000),  // 4 months ago: ~50%
+      Math.round(balance * 0.65 + Math.random() * 100000),  // 3 months ago: ~65%
+      Math.round(balance * 0.80 + Math.random() * 100000),  // 2 months ago: ~80%
+      Math.round(balance * 0.95 + Math.random() * 100000),  // current: ~95-100%
+    ];
+
+    const chartData = months.map((label, index) => ({
+      label,
+      balance: baseValues[index],
+    }));
+
+    return createMockResponse({
+      labels: months,
+      data: chartData,
+    });
+  }
+
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE_URL}/savings/me/chart`, {
+    method: "GET",
+    headers: createHeaders(token),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to fetch savings chart");
+  }
+
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
+}
+
+/**
  * Handles profile - get current user's profile
  */
 async function handleMyProfile(): Promise<ApiResponse> {
@@ -1031,6 +1214,83 @@ async function handleDashboard(): Promise<ApiResponse> {
 }
 
 /**
+ * Handles fakultas list
+ */
+async function handleFakultasList(): Promise<ApiResponse> {
+  if (USE_MOCK) {
+    await delay();
+    const fakultasNames = FAKULTAS_DATA.fakultas.map((f) => f.nama);
+    return createMockResponse(fakultasNames);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/fakultas/list`, {
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to fetch fakultas list");
+  }
+
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
+}
+
+/**
+ * Handles fakultas jurusan
+ */
+async function handleFakultasJurusan(fakultasName?: string): Promise<ApiResponse> {
+  if (USE_MOCK) {
+    await delay();
+    if (!fakultasName) {
+      return createMockErrorResponse(400, "Fakultas parameter is required");
+    }
+
+    const fakultas = FAKULTAS_DATA.fakultas.find((f) => f.nama === fakultasName);
+    if (!fakultas) {
+      return createMockErrorResponse(404, "Fakultas not found");
+    }
+
+    return createMockResponse(fakultas.jurusan);
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/fakultas/jurusan?fakultas=${encodeURIComponent(fakultasName || "")}`,
+    { method: "GET" },
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to fetch jurusan");
+  }
+
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
+}
+
+/**
+ * Handles all fakultas data
+ */
+async function handleFakultasAll(): Promise<ApiResponse> {
+  if (USE_MOCK) {
+    await delay();
+    return createMockResponse(FAKULTAS_DATA);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/fakultas`, {
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to fetch fakultas");
+  }
+
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
+}
+
+/**
  * Main API handler function
  * Routes requests to appropriate handler based on endpoint
  */
@@ -1137,6 +1397,12 @@ export async function apiHandler(
     if (endpoint === "/savings/me") {
       return handleMySavings();
     }
+    if (endpoint === "/savings/me/breakdown") {
+      return handleSavingsBreakdown();
+    }
+    if (endpoint === "/savings/me/chart") {
+      return handleSavingsChart();
+    }
     if (endpoint === "/savings") {
       return handleAllSavings();
     }
@@ -1165,6 +1431,17 @@ export async function apiHandler(
     // Dashboard endpoint
     if (endpoint === "/dashboard") {
       return handleDashboard();
+    }
+
+    // Fakultas endpoints
+    if (endpoint === "/fakultas") {
+      return handleFakultasAll();
+    }
+    if (endpoint === "/fakultas/list") {
+      return handleFakultasList();
+    }
+    if (endpoint === "/fakultas/jurusan") {
+      return handleFakultasJurusan(params?.fakultas);
     }
 
     throw new Error(`Unknown endpoint: ${endpoint}`);

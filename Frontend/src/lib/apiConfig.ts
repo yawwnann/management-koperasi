@@ -118,6 +118,16 @@ export const ENDPOINTS = {
       method: 'GET' as const,
       requiresAuth: true,
     },
+    BREAKDOWN: {
+      path: '/savings/me/breakdown',
+      method: 'GET' as const,
+      requiresAuth: true,
+    },
+    CHART: {
+      path: '/savings/me/chart',
+      method: 'GET' as const,
+      requiresAuth: true,
+    },
     LIST: {
       path: '/savings',
       method: 'GET' as const,
@@ -125,7 +135,14 @@ export const ENDPOINTS = {
     },
   },
 
-  // Reports (Admin Only)
+  // Dashboard (role-aware: ADMIN gets full data, ANGGOTA gets personal data)
+  DASHBOARD: {
+    ME: {
+      path: '/dashboard',
+      method: 'GET' as const,
+      requiresAuth: true,
+    },
+  },
   REPORTS: {
     DAILY: (date?: string) => ({
       path: '/reports/daily' + (date ? `?date=${date}` : ''),

@@ -78,9 +78,40 @@ export class WithdrawalsService {
     return withdrawal;
   }
 
-  async findAll(role: string, userId: string) {
+  async findAll(
+    role: string,
+    userId: string,
+    startDate?: string,
+    endDate?: string,
+    status?: string,
+  ) {
+    // Build where clause
+    const where: Prisma.WithdrawalWhereInput = {};
+
+    // Add user filter
+    if (role !== 'ADMIN') {
+      where.userId = userId;
+    }
+
+    // Add date filters
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate);
+      }
+    }
+
+    // Add status filter
+    if (status) {
+      where.status = status as any;
+    }
+
     if (role === 'ADMIN') {
       return this.prisma.withdrawal.findMany({
+        where,
         include: {
           user: {
             select: {
@@ -98,7 +129,7 @@ export class WithdrawalsService {
     }
 
     return this.prisma.withdrawal.findMany({
-      where: { userId },
+      where,
       include: {
         user: {
           select: {

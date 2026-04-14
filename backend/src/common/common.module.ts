@@ -29,7 +29,7 @@ dotenv.config({ path: envPath });
 
         return {
           secret,
-          signOptions: { expiresIn: expiresIn as any },
+          signOptions: { expiresIn: expiresIn } as Record<string, unknown>,
         };
       },
       inject: [ConfigService],

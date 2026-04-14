@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Body, Param, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { WithdrawalsService } from './withdrawals.service';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
 import { ApproveWithdrawalDto } from './dto/approve-withdrawal.dto';
@@ -14,8 +23,19 @@ export class WithdrawalsController {
   }
 
   @Get()
-  findAll(@Req() req) {
-    return this.withdrawalsService.findAll(req.user.role, req.user.sub);
+  findAll(
+    @Req() req,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.withdrawalsService.findAll(
+      req.user.role,
+      req.user.sub,
+      startDate,
+      endDate,
+      status,
+    );
   }
 
   @Get(':id')

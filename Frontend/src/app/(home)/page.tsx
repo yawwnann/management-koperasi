@@ -7,8 +7,8 @@ import {
   fetchAdminDashboard,
   fetchAnggotaDashboard,
   type AdminDashboardData,
-  type AnggotaDashboardData,
 } from "./fetch";
+import { UserDashboardData } from "@/types/api.types";
 import { PaymentTrendChart } from "@/components/Charts/payment-trend";
 import { PaymentStatusChart } from "@/components/Charts/payment-status";
 import { SavingsBreakdownChart } from "@/components/Charts/savings-breakdown";
@@ -270,89 +270,98 @@ function AdminDashboard({ userName }: { userName: string }) {
               </button>
             </div>
             <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto pr-2">
-              {data.recentAlerts.map((alert) => (
-                <div
-                  key={alert.id}
-                  className="flex items-start gap-3 rounded-xl border border-stroke p-4 dark:border-strokedark"
-                >
+              {data.recentAlerts.map(
+                (alert: {
+                  id: number;
+                  type: string;
+                  message: string;
+                  detail: string;
+                  time: string;
+                  status: "pending" | "success" | "info";
+                }) => (
                   <div
-                    className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
-                      alert.status === "pending"
-                        ? "bg-red-100 text-red-500 dark:bg-red-900/30"
-                        : alert.status === "success"
-                          ? "bg-green-100 text-green-500 dark:bg-green-900/30"
-                          : "bg-blue-100 text-blue-500 dark:bg-blue-900/30"
-                    }`}
+                    key={alert.id}
+                    className="flex items-start gap-3 rounded-xl border border-stroke p-4 dark:border-strokedark"
                   >
-                    {alert.status === "pending" ? (
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    ) : alert.status === "success" ? (
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                        />
-                      </svg>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-dark dark:text-white">
-                      {alert.message}
-                    </p>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      {alert.detail}
-                    </p>
-                    <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
-                      {alert.time}
-                    </p>
-                    <div className="mt-2 flex gap-2">
-                      {alert.status === "pending" && (
-                        <>
-                          <button className="rounded-lg bg-green-500 px-3 py-1 text-xs font-medium text-white hover:bg-green-600">
-                            Setujui
-                          </button>
-                          <button className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300">
-                            Detail
-                          </button>
-                        </>
+                    <div
+                      className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
+                        alert.status === "pending"
+                          ? "bg-red-100 text-red-500 dark:bg-red-900/30"
+                          : alert.status === "success"
+                            ? "bg-green-100 text-green-500 dark:bg-green-900/30"
+                            : "bg-blue-100 text-blue-500 dark:bg-blue-900/30"
+                      }`}
+                    >
+                      {alert.status === "pending" ? (
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      ) : alert.status === "success" ? (
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      ) : (
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
                       )}
                     </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-dark dark:text-white">
+                        {alert.message}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {alert.detail}
+                      </p>
+                      <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                        {alert.time}
+                      </p>
+                      <div className="mt-2 flex gap-2">
+                        {alert.status === "pending" && (
+                          <>
+                            <button className="rounded-lg bg-green-500 px-3 py-1 text-xs font-medium text-white hover:bg-green-600">
+                              Setujui
+                            </button>
+                            <button className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300">
+                              Detail
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ),
+              )}
             </div>
           </div>
 
@@ -368,83 +377,94 @@ function AdminDashboard({ userName }: { userName: string }) {
                 </span>
               </div>
               <div className="custom-scrollbar flex-1 space-y-3 overflow-y-auto pr-2">
-                {data.recentActivities.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="flex items-start justify-between rounded-xl border border-stroke p-4 hover:bg-gray-50 dark:border-strokedark dark:hover:bg-gray-800/50"
-                  >
-                    <div className="flex flex-1 items-start gap-3">
-                      <div
-                        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
-                          activity.type === "payment"
-                            ? "bg-blue-100 text-blue-500 dark:bg-blue-900/30"
-                            : "bg-orange-100 text-orange-500 dark:bg-orange-900/30"
-                        }`}
-                      >
-                        {activity.type === "payment" ? (
-                          <svg
-                            className="h-5 w-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                            />
-                          </svg>
-                        ) : (
-                          <svg
-                            className="h-5 w-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-                            />
-                          </svg>
-                        )}
+                {data.recentActivities.map(
+                  (activity: {
+                    id: string;
+                    type: "payment" | "withdrawal";
+                    amount: number;
+                    status: string;
+                    createdAt: string;
+                    description?: string;
+                  }) => (
+                    <div
+                      key={activity.id}
+                      className="flex items-start justify-between rounded-xl border border-stroke p-4 hover:bg-gray-50 dark:border-strokedark dark:hover:bg-gray-800/50"
+                    >
+                      <div className="flex flex-1 items-start gap-3">
+                        <div
+                          className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
+                            activity.type === "payment"
+                              ? "bg-blue-100 text-blue-500 dark:bg-blue-900/30"
+                              : "bg-orange-100 text-orange-500 dark:bg-orange-900/30"
+                          }`}
+                        >
+                          {activity.type === "payment" ? (
+                            <svg
+                              className="h-5 w-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                              />
+                            </svg>
+                          ) : (
+                            <svg
+                              className="h-5 w-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-dark dark:text-white">
+                            {activity.type === "payment"
+                              ? "Setoran"
+                              : "Penarikan"}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            {activity.type === "payment"
+                              ? "Pembayaran"
+                              : "Penarikan"}{" "}
+                            • {formatDate(activity.createdAt)}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-dark dark:text-white">
-                          {activity.userName}
+                      <div className="ml-4 text-right">
+                        <p className="text-sm font-bold text-dark dark:text-white">
+                          {formatCurrency(activity.amount)}
                         </p>
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                          {activity.type === "payment"
-                            ? "Pembayaran"
-                            : "Penarikan"}{" "}
-                          • {formatDate(activity.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="ml-4 text-right">
-                      <p className="text-sm font-bold text-dark dark:text-white">
-                        {formatCurrency(activity.amount)}
-                      </p>
-                      <span
-                        className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          activity.status === "PENDING"
-                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                        <span
+                          className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                            activity.status === "PENDING"
+                              ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                              : activity.status === "APPROVED"
+                                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                          }`}
+                        >
+                          {activity.status === "PENDING"
+                            ? "Pending"
                             : activity.status === "APPROVED"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                              : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                        }`}
-                      >
-                        {activity.status === "PENDING"
-                          ? "Pending"
-                          : activity.status === "APPROVED"
-                            ? "Disetujui"
-                            : "Ditolak"}
-                      </span>
+                              ? "Disetujui"
+                              : "Ditolak"}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ),
+                )}
               </div>
             </div>
           )}
@@ -463,75 +483,86 @@ function AdminDashboard({ userName }: { userName: string }) {
             </span>
           </div>
           <div className="space-y-3">
-            {data.recentApprovals.map((approval) => (
-              <div
-                key={approval.id}
-                className="flex items-start justify-between rounded-xl border border-stroke p-4 hover:bg-gray-50 dark:border-strokedark dark:hover:bg-gray-800/50"
-              >
-                <div className="flex flex-1 items-start gap-3">
-                  <div
-                    className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
-                      approval.status === "APPROVED"
-                        ? "bg-green-100 text-green-500 dark:bg-green-900/30"
-                        : "bg-red-100 text-red-500 dark:bg-red-900/30"
-                    }`}
-                  >
-                    {approval.status === "APPROVED" ? (
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="h-5 w-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    )}
+            {data.recentApprovals.map(
+              (approval: {
+                id: string;
+                type: "payment" | "withdrawal";
+                userName: string;
+                amount: number;
+                status: "APPROVED" | "REJECTED";
+                approvedAt: string;
+              }) => (
+                <div
+                  key={approval.id}
+                  className="flex items-start justify-between rounded-xl border border-stroke p-4 hover:bg-gray-50 dark:border-strokedark dark:hover:bg-gray-800/50"
+                >
+                  <div className="flex flex-1 items-start gap-3">
+                    <div
+                      className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
+                        approval.status === "APPROVED"
+                          ? "bg-green-100 text-green-500 dark:bg-green-900/30"
+                          : "bg-red-100 text-red-500 dark:bg-red-900/30"
+                      }`}
+                    >
+                      {approval.status === "APPROVED" ? (
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      ) : (
+                        <svg
+                          className="h-5 w-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-dark dark:text-white">
+                        {approval.userName}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {approval.type === "payment"
+                          ? "Pembayaran"
+                          : "Penarikan"}{" "}
+                        • {formatDate(approval.approvedAt)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-dark dark:text-white">
-                      {approval.userName}
+                  <div className="ml-4 text-right">
+                    <p className="text-sm font-bold text-dark dark:text-white">
+                      {formatCurrency(approval.amount)}
                     </p>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      {approval.type === "payment" ? "Pembayaran" : "Penarikan"}{" "}
-                      • {formatDate(approval.approvedAt)}
-                    </p>
+                    <span
+                      className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                        approval.status === "APPROVED"
+                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                          : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                      }`}
+                    >
+                      {approval.status === "APPROVED" ? "Disetujui" : "Ditolak"}
+                    </span>
                   </div>
                 </div>
-                <div className="ml-4 text-right">
-                  <p className="text-sm font-bold text-dark dark:text-white">
-                    {formatCurrency(approval.amount)}
-                  </p>
-                  <span
-                    className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                      approval.status === "APPROVED"
-                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                        : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                    }`}
-                  >
-                    {approval.status === "APPROVED" ? "Disetujui" : "Ditolak"}
-                  </span>
-                </div>
-              </div>
-            ))}
+              ),
+            )}
           </div>
         </div>
       )}
@@ -735,16 +766,18 @@ function AdminDashboard({ userName }: { userName: string }) {
 }
 
 function AnggotaDashboard({ userName }: { userName: string }) {
-  const [data, setData] = useState<AnggotaDashboardData | null>(null);
+  const [data, setData] = useState<UserDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
       try {
         const result = await fetchAnggotaDashboard();
         setData(result);
-      } catch (error) {
-        console.error("Failed to fetch anggota dashboard data:", error);
+      } catch (err) {
+        console.error("Failed to fetch anggota dashboard data:", err);
+        setError("Gagal memuat data dashboard");
       } finally {
         setLoading(false);
       }
@@ -769,21 +802,26 @@ function AnggotaDashboard({ userName }: { userName: string }) {
     );
   }
 
-  if (!data) {
+  if (error || !data) {
     return (
       <div className="rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
-        <p className="text-red-500">Failed to load dashboard data.</p>
+        <div className="flex items-center gap-3">
+          <svg className="h-6 w-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <p className="text-lg font-semibold text-red-500">Terjadi Kesalahan</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{error || "Gagal memuat data dashboard."}</p>
+          </div>
+        </div>
       </div>
     );
   }
 
-  const getStatusBadge = (status: string | null) => {
-    if (!status) return null;
+  const getStatusBadge = (status: string) => {
     const statusColors: Record<string, string> = {
-      PENDING:
-        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-      APPROVED:
-        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+      PENDING: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+      APPROVED: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
       REJECTED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
     };
     const statusLabels: Record<string, string> = {
@@ -791,15 +829,11 @@ function AnggotaDashboard({ userName }: { userName: string }) {
       APPROVED: "Disetujui",
       REJECTED: "Ditolak",
     };
-    const color =
-      statusColors[status] ||
-      "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
+    const color = statusColors[status] || "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300";
     const label = statusLabels[status] || status;
 
     return (
-      <span
-        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${color}`}
-      >
+      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${color}`}>
         {label}
       </span>
     );
@@ -807,162 +841,76 @@ function AnggotaDashboard({ userName }: { userName: string }) {
 
   const cards = [
     {
-      title: "Saldo Saya",
-      value: data.mySavings ? formatCurrency(data.mySavings.balance) : "Rp 0",
-      subtitle: data.mySavings
-        ? `Terakhir diperbarui: ${formatDate(data.mySavings.updatedAt)}`
-        : "Tidak ada data",
+      title: "Total Saldo",
+      value: formatCurrency(data.totalBalance),
       icon: (
-        <svg
-          className="h-6 w-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-          />
+        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
         </svg>
       ),
       bgColor: "bg-blue-100 dark:bg-blue-900/30",
       textColor: "text-blue-500",
     },
     {
-      title: "Pembayaran Terakhir",
-      value: data.lastPayment ? formatCurrency(data.lastPayment.amount) : "-",
-      badge: data.lastPayment ? (
-        getStatusBadge(data.lastPayment.status)
-      ) : (
-        <span className="text-sm text-gray-400">Tidak ada</span>
-      ),
-      subtitle: data.lastPayment ? formatDate(data.lastPayment.createdAt) : "",
+      title: "Pembayaran Pending",
+      value: data.pendingPayments.toString(),
       icon: (
-        <svg
-          className="h-6 w-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-          />
+        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
       ),
-      bgColor: "bg-green-100 dark:bg-green-900/30",
-      textColor: "text-green-500",
+      bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
+      textColor: "text-yellow-500",
     },
     {
-      title: "Penarikan Terakhir",
-      value: data.lastWithdrawal
-        ? formatCurrency(data.lastWithdrawal.amount)
-        : "-",
-      badge: data.lastWithdrawal ? (
-        getStatusBadge(data.lastWithdrawal.status)
-      ) : (
-        <span className="text-sm text-gray-400">Tidak ada</span>
-      ),
-      subtitle: data.lastWithdrawal
-        ? formatDate(data.lastWithdrawal.createdAt)
-        : "",
+      title: "Penarikan Pending",
+      value: data.pendingWithdrawals.toString(),
       icon: (
-        <svg
-          className="h-6 w-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-          />
+        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
       ),
       bgColor: "bg-orange-100 dark:bg-orange-900/30",
       textColor: "text-orange-500",
     },
     {
-      title: "Status Akun",
-      value: data.accountStatus,
-      subtitle: data.mySavings
-        ? "Akun simpanan aktif"
-        : "Belum memiliki akun simpanan",
+      title: "Transaksi Disetujui",
+      value: `${data.approvedPayments + data.approvedWithdrawals}`,
       icon: (
-        <svg
-          className="h-6 w-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
+        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
-      bgColor:
-        data.accountStatus === "Active"
-          ? "bg-green-100 dark:bg-green-900/30"
-          : "bg-gray-100 dark:bg-gray-700",
-      textColor:
-        data.accountStatus === "Active" ? "text-green-500" : "text-gray-500",
+      bgColor: "bg-green-100 dark:bg-green-900/30",
+      textColor: "text-green-500",
     },
   ];
 
-  const recentNotifications = [
-    {
-      id: 1,
-      message: "Pembayaran Disetujui",
-      detail: "Pembayaran simpanan wajib Anda telah disetujui",
-      time: "Baru saja",
-      status: "success",
-    },
-    {
-      id: 2,
-      message: "Penarikan Sedang Diproses",
-      detail: "Penarikan Rp 500.000 sedang dalam proses verifikasi",
-      time: "1 jam yang lalu",
-      status: "pending",
-    },
-    {
-      id: 3,
-      message: "Saldo Anda Bertambah",
-      detail: "Simpanan sukarela sebesar Rp 200.000 telah ditambahkan",
-      time: "3 jam yang lalu",
-      status: "info",
-    },
-  ];
+  // Transform recent activities to match admin dashboard format
+  const recentActivities = data.recentActivities.slice(0, 5).map((activity) => ({
+    ...activity,
+    userName: data.user.name,
+  }));
 
   return (
     <>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-black dark:text-white">
-          Selamat datang, {userName}!
+          Welcome back, {userName}!
         </h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Berikut ringkasan informasi KOPMA Anda.
+          Here&apos;s an overview of your KOPMA account.
         </p>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Same as Admin */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
         {cards.map((card) => (
           <div
             key={card.title}
             className="rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark"
           >
-            <div
-              className={`flex h-12 w-12 items-center justify-center rounded-full ${card.bgColor} ${card.textColor}`}
-            >
+            <div className={`flex h-12 w-12 items-center justify-center rounded-full ${card.bgColor} ${card.textColor}`}>
               {card.icon}
             </div>
             <div className="mt-4">
@@ -972,107 +920,96 @@ function AnggotaDashboard({ userName }: { userName: string }) {
               <p className="mt-1 text-2xl font-bold text-black dark:text-white">
                 {card.value}
               </p>
-              {card.subtitle && (
-                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-                  {card.subtitle}
-                </p>
-              )}
-              {card.badge && <div className="mt-2">{card.badge}</div>}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Content Grid */}
+      {/* Charts and Activities Section - Same Layout as Admin */}
       <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-        {/* Left Column - Payment History */}
-        <div className="xl:col-span-2">
-          <PaymentHistoryChart data={data.paymentHistory} />
+        {/* Left Column - Charts */}
+        <div className="space-y-6 xl:col-span-2">
+          {/* Payment Trend Chart */}
+          <PaymentTrendChart data={data.paymentTrend} />
+
+          {/* Savings Breakdown Chart */}
+          <div className="rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+            <h3 className="mb-4 text-lg font-semibold text-dark dark:text-white">
+              Breakdown Simpanan
+            </h3>
+            <SavingsBreakdownChart data={data.savingsBreakdown} />
+          </div>
         </div>
 
-        {/* Right Column - Recent Notifications */}
-        <div className="rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-dark dark:text-white">
-              Pemberitahuan Terbaru
-            </h3>
-            <button className="text-sm text-primary hover:underline">
-              Lihat Semua
-            </button>
-          </div>
-          <div className="space-y-4">
-            {recentNotifications.map((notification) => (
-              <div
-                key={notification.id}
-                className="flex items-start gap-3 rounded-xl border border-stroke p-4 dark:border-strokedark"
-              >
-                <div
-                  className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
-                    notification.status === "pending"
-                      ? "bg-yellow-100 text-yellow-500 dark:bg-yellow-900/30"
-                      : notification.status === "success"
-                        ? "bg-green-100 text-green-500 dark:bg-green-900/30"
-                        : "bg-blue-100 text-blue-500 dark:bg-blue-900/30"
-                  }`}
-                >
-                  {notification.status === "pending" ? (
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  ) : notification.status === "success" ? (
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-dark dark:text-white">
-                    {notification.message}
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    {notification.detail}
-                  </p>
-                  <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
-                    {notification.time}
-                  </p>
-                </div>
+        {/* Right Column - Recent Activities */}
+        <div className="flex flex-col gap-6">
+          {/* Aktivitas Terbaru */}
+          {recentActivities.length > 0 && (
+            <div className="flex h-[465px] flex-col rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+              <div className="mb-4 flex flex-shrink-0 items-center justify-between">
+                <h3 className="text-lg font-semibold text-dark dark:text-white">
+                  Aktivitas Terbaru
+                </h3>
+                <span className="flex-shrink-0 text-sm text-gray-500 dark:text-gray-400">
+                  {recentActivities.length} transaksi
+                </span>
               </div>
-            ))}
-          </div>
+              <div className="custom-scrollbar flex-1 space-y-3 overflow-y-auto pr-2">
+                {recentActivities.map((activity) => (
+                  <div
+                    key={activity.id}
+                    className="flex items-start justify-between rounded-xl border border-stroke p-4 hover:bg-gray-50 dark:border-strokedark dark:hover:bg-gray-800/50"
+                  >
+                    <div className="flex flex-1 items-start gap-3">
+                      <div
+                        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
+                          activity.type === "payment"
+                            ? "bg-blue-100 text-blue-500 dark:bg-blue-900/30"
+                            : "bg-orange-100 text-orange-500 dark:bg-orange-900/30"
+                        }`}
+                      >
+                        {activity.type === "payment" ? (
+                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          </svg>
+                        ) : (
+                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-dark dark:text-white">
+                          {activity.userName}
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          {activity.type === "payment" ? "Pembayaran" : "Penarikan"} • {formatDate(activity.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="ml-4 text-right">
+                      <p className="text-sm font-bold text-dark dark:text-white">
+                        {formatCurrency(activity.amount)}
+                      </p>
+                      <span className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                        activity.status === "PENDING"
+                          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                          : activity.status === "APPROVED"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                      }`}>
+                        {activity.status === "PENDING"
+                          ? "Pending"
+                          : activity.status === "APPROVED"
+                            ? "Disetujui"
+                            : "Ditolak"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>

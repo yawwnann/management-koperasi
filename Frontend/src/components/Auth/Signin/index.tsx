@@ -10,6 +10,7 @@ export default function Signin() {
         <button
           type="button"
           className="flex items-center justify-center gap-2 rounded-lg border border-stroke bg-white px-4 py-3 text-sm font-medium text-dark transition hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white dark:hover:bg-gray-800"
+          suppressHydrationWarning
         >
           <svg
             className="h-5 w-5"
@@ -41,6 +42,7 @@ export default function Signin() {
         <button
           type="button"
           className="flex items-center justify-center gap-2 rounded-lg border border-stroke bg-white px-4 py-3 text-sm font-medium text-dark transition hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white dark:hover:bg-gray-800"
+          suppressHydrationWarning
         >
           <svg
             className="h-5 w-5 text-blue-600"

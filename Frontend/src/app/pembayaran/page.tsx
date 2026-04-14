@@ -102,20 +102,25 @@ function PembayaranContent() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <Breadcrumb pageName="Pembayaran" />
+      {/* Header Section - Consistent with Admin */}
+      <div className="mb-6">
+        <Breadcrumb pageName="Pembayaran" />
+      </div>
 
-      <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
-        <div className="border-b border-stroke px-6 py-4 dark:border-strokedark">
+      {/* Form Card - Consistent rounded-2xl like admin */}
+      <div className="rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
+        {/* Card Header */}
+        <div className="mb-6 border-b border-stroke pb-4 dark:border-strokedark">
           <h3 className="text-lg font-semibold text-dark dark:text-white">Form Pembayaran</h3>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Isi formulir di bawah untuk melakukan pembayaran simpanan.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
+        <form onSubmit={handleSubmit}>
           {message && (
             <div
-              className={`mb-6 rounded-md border p-4 ${
+              className={`mb-6 rounded-lg border p-4 ${
                 message.type === "success"
                   ? "border-green-300 bg-green-50 text-green-700 dark:border-green-600 dark:bg-green-900/20 dark:text-green-400"
                   : "border-red-300 bg-red-50 text-red-700 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400"
@@ -127,7 +132,7 @@ function PembayaranContent() {
 
           {/* Payment Type */}
           <div className="mb-5">
-            <label className="mb-2 block font-medium text-dark dark:text-white" htmlFor="paymentType">
+            <label className="mb-2 block text-sm font-medium text-dark dark:text-white" htmlFor="paymentType">
               Jenis Pembayaran <span className="text-red-500">*</span>
             </label>
             <select
@@ -148,7 +153,7 @@ function PembayaranContent() {
 
           {/* Amount */}
           <div className="mb-5">
-            <label className="mb-2 block font-medium text-dark dark:text-white" htmlFor="amount">
+            <label className="mb-2 block text-sm font-medium text-dark dark:text-white" htmlFor="amount">
               Jumlah Pembayaran (Rp) <span className="text-red-500">*</span>
             </label>
             <div className="relative">
@@ -168,10 +173,10 @@ function PembayaranContent() {
 
           {/* File Upload */}
           <div className="mb-6">
-            <label className="mb-2 block font-medium text-dark dark:text-white" htmlFor="proofFile">
+            <label className="mb-2 block text-sm font-medium text-dark dark:text-white" htmlFor="proofFile">
               Bukti Pembayaran <span className="text-red-500">*</span>
             </label>
-            <div className="rounded-lg border-2 border-dashed border-stroke p-6 text-center dark:border-strokedark">
+            <div className="rounded-lg border-2 border-dashed border-stroke p-8 text-center dark:border-strokedark">
               <input
                 id="proofFile"
                 type="file"
@@ -186,7 +191,7 @@ function PembayaranContent() {
                     <img
                       src={previewUrl}
                       alt="Preview bukti pembayaran"
-                      className="mx-auto mb-3 max-h-48 rounded-md object-contain"
+                      className="mx-auto mb-3 max-h-48 rounded-lg object-contain"
                     />
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       Klik untuk mengganti file: <span className="font-medium text-primary">{form.proofFile?.name}</span>
@@ -218,7 +223,19 @@ function PembayaranContent() {
           </div>
 
           {/* Submit Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setForm({ paymentType: "", amount: "", proofFile: null });
+                setPreviewUrl(null);
+                setMessage(null);
+              }}
+              disabled={loading}
+              className="rounded-lg border border-stroke bg-white px-6 py-3 font-medium text-gray-700 transition hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+              Reset
+            </button>
             <button
               type="submit"
               disabled={loading}

@@ -8,7 +8,7 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Logger, UnauthorizedException } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
@@ -42,7 +42,7 @@ export class NotificationsGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
   private readonly logger = new Logger(NotificationsGateway.name);
   private connectedClients: Map<
@@ -83,13 +83,13 @@ export class NotificationsGateway
       });
 
       // Auto-join user room
-      client.join(`user:${payload.sub}`);
+      void client.join(`user:${payload.sub}`);
       if (payload.role === 'ADMIN') {
-        client.join('role:ADMIN');
+        void client.join('role:ADMIN');
       }
 
       this.logger.log(`Client connected: ${payload.name} (${payload.role})`);
-    } catch (error) {
+    } catch {
       this.logger.warn(`Connection rejected: Invalid token`);
       client.disconnect();
     }
@@ -139,8 +139,8 @@ export class NotificationsGateway
         role: data.role,
         userId: data.userId,
       });
-      client.join(`user:${data.userId}`);
-      client.join(`role:${data.role}`);
+      void client.join(`user:${data.userId}`);
+      void client.join(`role:${data.role}`);
 
       this.logger.log(
         `User ${data.userId} (${data.role}) subscribed to notifications`,
@@ -160,8 +160,8 @@ export class NotificationsGateway
   handleUnsubscribe(@ConnectedSocket() client: Socket) {
     const clientInfo = this.connectedClients.get(client.id);
     if (clientInfo) {
-      client.leave(`user:${clientInfo.userId}`);
-      client.leave(`role:${clientInfo.role}`);
+      void client.leave(`user:${clientInfo.userId}`);
+      void client.leave(`role:${clientInfo.role}`);
       this.logger.log(
         `Client unsubscribed: ${clientInfo.userId} (${clientInfo.role})`,
       );

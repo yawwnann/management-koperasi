@@ -1,0 +1,76 @@
+{
+  "universitas": "Universitas Ahmad Dahlan",
+  "fakultas": [
+    {
+      "nama": "Fakultas Agama Islam",
+      "jurusan": [
+        "Pendidikan Agama Islam",
+        "Bahasa dan Sastra Arab",
+        "Perbankan Syariah",
+        "Ilmu Hadis"
+      ]
+    },
+    {
+      "nama": "Fakultas Psikologi",
+      "jurusan": ["Psikologi"]
+    },
+    {
+      "nama": "Fakultas Ekonomi dan Bisnis",
+      "jurusan": [
+        "Manajemen",
+        "Akuntansi",
+        "Ekonomi Pembangunan",
+        "Bisnis Jasa Makanan"
+      ]
+    },
+    {
+      "nama": "Fakultas Keguruan dan Ilmu Pendidikan",
+      "jurusan": [
+        "Bimbingan dan Konseling",
+        "Pendidikan Bahasa dan Sastra Indonesia",
+        "Pendidikan Bahasa Inggris",
+        "Pendidikan Matematika",
+        "Pendidikan Fisika",
+        "Pendidikan Biologi",
+        "PGSD",
+        "PG PAUD",
+        "PPKn",
+        "Pendidikan Vokasional Teknik Elektronika"
+      ]
+    },
+    {
+      "nama": "Fakultas Hukum",
+      "jurusan": ["Ilmu Hukum"]
+    },
+    {
+      "nama": "Fakultas Sastra, Budaya, dan Komunikasi",
+      "jurusan": ["Sastra Inggris", "Sastra Indonesia", "Ilmu Komunikasi"]
+    },
+    {
+      "nama": "Fakultas Sains dan Teknologi Terapan",
+      "jurusan": ["Matematika", "Fisika", "Biologi", "Sistem Informasi"]
+    },
+    {
+      "nama": "Fakultas Farmasi",
+      "jurusan": ["Farmasi"]
+    },
+    {
+      "nama": "Fakultas Kesehatan Masyarakat",
+      "jurusan": ["Kesehatan Masyarakat", "Gizi"]
+    },
+    {
+      "nama": "Fakultas Teknologi Industri",
+      "jurusan": [
+        "Informatika",
+        "Teknik Industri",
+        "Teknik Kimia",
+        "Teknik Elektro",
+        "Teknologi Pangan"
+      ]
+    },
+    {
+      "nama": "Fakultas Kedokteran",
+      "jurusan": ["Kedokteran"]
+    }
+  ]
+}

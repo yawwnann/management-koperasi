@@ -6,53 +6,58 @@ import {
   DropdownTrigger,
 } from "@/components/ui/dropdown";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useNotifications } from "@/hooks/use-notifications";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { BellIcon } from "./icons";
 
-const notificationList = [
-  {
-    image: "/images/user/user-15.png",
-    title: "Piter Joined the Team!",
-    subTitle: "Congratulate him",
-  },
-  {
-    image: "/images/user/user-03.png",
-    title: "New message",
-    subTitle: "Devid sent a new message",
-  },
-  {
-    image: "/images/user/user-26.png",
-    title: "New Payment received",
-    subTitle: "Check your earnings",
-  },
-  {
-    image: "/images/user/user-28.png",
-    title: "Jolly completed tasks",
-    subTitle: "Assign new task",
-  },
-  {
-    image: "/images/user/user-27.png",
-    title: "Roman Joined the Team!",
-    subTitle: "Congratulate him",
-  },
-];
-
 export function Notification() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isDotVisible, setIsDotVisible] = useState(true);
   const isMobile = useIsMobile();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, isLoading } = useNotifications();
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return "Baru saja";
+    if (diffMins < 60) return `${diffMins} menit yang lalu`;
+    if (diffHours < 24) return `${diffHours} jam yang lalu`;
+    if (diffDays < 7) return `${diffDays} hari yang lalu`;
+    return date.toLocaleDateString('id-ID');
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'payment':
+        return '💰';
+      case 'withdrawal':
+        return '💸';
+      case 'system':
+        return '⚙️';
+      default:
+        return '🔔';
+    }
+  };
+
+  const handleNotificationClick = async (id: string) => {
+    await markAsRead(id);
+    setIsOpen(false);
+  };
+
+  const handleMarkAllRead = async () => {
+    await markAllAsRead();
+  };
 
   return (
     <Dropdown
       isOpen={isOpen}
-      setIsOpen={(open) => {
-        setIsOpen(open);
-
-        if (setIsDotVisible) setIsDotVisible(false);
-      }}
+      setIsOpen={(open) => setIsOpen(open)}
     >
       <DropdownTrigger
         className="grid size-12 place-items-center rounded-full border bg-gray-2 text-dark outline-none hover:text-primary focus-visible:border-primary focus-visible:text-primary dark:border-dark-4 dark:bg-dark-3 dark:text-white dark:focus-visible:border-primary"
@@ -61,7 +66,7 @@ export function Notification() {
         <span className="relative">
           <BellIcon />
 
-          {isDotVisible && (
+          {unreadCount > 0 && (
             <span
               className={cn(
                 "absolute right-0 top-0 z-1 size-2 rounded-full bg-red-light ring-2 ring-gray-2 dark:ring-dark-3",
@@ -81,48 +86,77 @@ export function Notification() {
           <span className="text-lg font-medium text-dark dark:text-white">
             Notifications
           </span>
-          <span className="rounded-md bg-primary px-[9px] py-0.5 text-xs font-medium text-white">
-            5 new
-          </span>
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 && (
+              <span className="rounded-md bg-primary px-[9px] py-0.5 text-xs font-medium text-white">
+                {unreadCount} baru
+              </span>
+            )}
+            {notifications.length > 0 && (
+              <button
+                onClick={handleMarkAllRead}
+                className="text-xs text-primary hover:underline"
+              >
+                Tandai semua dibaca
+              </button>
+            )}
+          </div>
         </div>
 
         <ul className="mb-3 max-h-[23rem] space-y-1.5 overflow-y-auto">
-          {notificationList.map((item, index) => (
-            <li key={index} role="menuitem">
-              <Link
-                href="#"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-4 rounded-lg px-2 py-1.5 outline-none hover:bg-gray-2 focus-visible:bg-gray-2 dark:hover:bg-dark-3 dark:focus-visible:bg-dark-3"
-              >
-                <Image
-                  src={item.image}
-                  className="size-14 rounded-full object-cover"
-                  width={200}
-                  height={200}
-                  alt="User"
-                />
-
-                <div>
-                  <strong className="block text-sm font-medium text-dark dark:text-white">
-                    {item.title}
-                  </strong>
-
-                  <span className="truncate text-sm font-medium text-dark-5 dark:text-dark-6">
-                    {item.subTitle}
-                  </span>
-                </div>
-              </Link>
+          {isLoading ? (
+            <li className="px-2 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+              Memuat notifikasi...
             </li>
-          ))}
+          ) : notifications.length === 0 ? (
+            <li className="px-2 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+              Tidak ada notifikasi
+            </li>
+          ) : (
+            notifications.slice(0, 10).map((notification) => (
+              <li key={notification.id} role="menuitem">
+                <Link
+                  href={notification.actionUrl || "#"}
+                  onClick={() => handleNotificationClick(notification.id)}
+                  className={`flex gap-3 rounded-lg px-2 py-2 outline-none hover:bg-gray-2 focus-visible:bg-gray-2 dark:hover:bg-dark-3 dark:focus-visible:bg-dark-3 ${
+                    !notification.isRead ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                  }`}
+                >
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-lg">
+                    {getNotificationIcon(notification.type)}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <strong className="block text-sm font-medium text-dark dark:text-white truncate">
+                        {notification.title}
+                      </strong>
+                      {!notification.isRead && (
+                        <span className="size-2 shrink-0 rounded-full bg-primary" />
+                      )}
+                    </div>
+                    <p className="truncate text-sm text-dark-5 dark:text-dark-6">
+                      {notification.message}
+                    </p>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
+                      {formatTime(notification.createdAt)}
+                    </span>
+                  </div>
+                </Link>
+              </li>
+            ))
+          )}
         </ul>
 
-        <Link
-          href="#"
-          onClick={() => setIsOpen(false)}
-          className="block rounded-lg border border-primary p-2 text-center text-sm font-medium tracking-wide text-primary outline-none transition-colors hover:bg-blue-light-5 focus:bg-blue-light-5 focus:text-primary focus-visible:border-primary dark:border-dark-3 dark:text-dark-6 dark:hover:border-dark-5 dark:hover:bg-dark-3 dark:hover:text-dark-7 dark:focus-visible:border-dark-5 dark:focus-visible:bg-dark-3 dark:focus-visible:text-dark-7"
-        >
-          See all notifications
-        </Link>
+        {notifications.length > 10 && (
+          <Link
+            href="/notifications"
+            onClick={() => setIsOpen(false)}
+            className="block rounded-lg border border-primary p-2 text-center text-sm font-medium tracking-wide text-primary outline-none transition-colors hover:bg-blue-light-5 focus:bg-blue-light-5 focus:text-primary focus-visible:border-primary dark:border-dark-3 dark:text-dark-6 dark:hover:border-dark-5 dark:hover:bg-dark-3 dark:hover:text-dark-7 dark:focus-visible:border-dark-5 dark:focus-visible:bg-dark-3 dark:focus-visible:text-dark-7"
+          >
+            Lihat semua notifikasi
+          </Link>
+        )}
       </DropdownContent>
     </Dropdown>
   );

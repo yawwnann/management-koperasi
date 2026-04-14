@@ -7,6 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenService } from './refresh-token.service';
+import { LoginHistoryService } from './login-history.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private refreshTokenService: RefreshTokenService,
+    private loginHistoryService: LoginHistoryService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -40,8 +42,47 @@ export class AuthService {
     return result;
   }
 
-  async login(loginDto: LoginDto, userAgent?: string) {
-    const user = await this.validateUser(loginDto.email, loginDto.password);
+  async login(loginDto: LoginDto, userAgent?: string, ipAddress?: string) {
+    let user: any;
+
+    try {
+      user = await this.validateUser(loginDto.email, loginDto.password);
+
+      // Save successful login to history
+      if (ipAddress && userAgent) {
+        this.loginHistoryService
+          .saveLogin({
+            userId: user.id,
+            ipAddress,
+            userAgent,
+            status: 'SUCCESS',
+          })
+          .catch((err) => console.error('Failed to save login history:', err));
+      }
+    } catch (error) {
+      // Save failed login to history
+      if (ipAddress && userAgent) {
+        // Find user by email to get userId for failed attempts
+        const foundUser = await this.prisma.user
+          .findUnique({ where: { email: loginDto.email } })
+          .catch(() => null);
+
+        if (foundUser) {
+          this.loginHistoryService
+            .saveLogin({
+              userId: foundUser.id,
+              ipAddress,
+              userAgent,
+              status: 'FAILED',
+              failureReason: error.message || 'Invalid credentials',
+            })
+            .catch((err) =>
+              console.error('Failed to save failed login history:', err),
+            );
+        }
+      }
+      throw error;
+    }
 
     const payload = {
       sub: user.id,
@@ -115,6 +156,45 @@ export class AuthService {
 
   async logoutAll(userId: string): Promise<void> {
     await this.refreshTokenService.revokeAllUserTokens(userId);
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    // Get user with password
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Password lama salah');
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    // Revoke all refresh tokens (force re-login on all devices)
+    await this.refreshTokenService.revokeAllUserTokens(userId);
+
+    return { message: 'Password berhasil diubah' };
   }
 
   async getProfile(userId: string) {

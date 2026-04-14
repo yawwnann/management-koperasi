@@ -17,7 +17,9 @@ import type {
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { Public } from '../common/decorators/public.decorator';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { JwtService } from '@nestjs/jwt';
 
 @Controller('auth')
@@ -36,7 +38,15 @@ export class AuthController {
     @Response({ passthrough: true }) res: ExpressResponse,
   ) {
     const userAgent = req.headers['user-agent'];
-    const result = await this.authService.login(loginDto, userAgent);
+    // Get real IP address (handle proxies)
+    const ipAddress =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0] ||
+      (req.headers['x-real-ip'] as string) ||
+      req.ip ||
+      req.socket?.remoteAddress ||
+      'unknown';
+
+    const result = await this.authService.login(loginDto, userAgent, ipAddress);
 
     // Set refresh token as httpOnly cookie
     const cookieName = process.env.REFRESH_TOKEN_COOKIE_NAME || 'refresh_token';
@@ -62,15 +72,15 @@ export class AuthController {
     @Response({ passthrough: true }) res: ExpressResponse,
   ) {
     const userAgent = req.headers['user-agent'];
-    
+
     // Get refresh token from cookie (cookie-parser middleware)
     const cookieName = process.env.REFRESH_TOKEN_COOKIE_NAME || 'refresh_token';
     const token = req.cookies?.[cookieName] || refreshTokenDto.refresh_token;
-    
+
     if (!token) {
       throw new UnauthorizedException('Refresh token not found in cookie');
     }
-    
+
     const result = await this.authService.refreshTokens(token, userAgent);
 
     // Set new refresh token as httpOnly cookie
@@ -97,7 +107,7 @@ export class AuthController {
     // Get refresh token from cookie
     const cookieName = process.env.REFRESH_TOKEN_COOKIE_NAME || 'refresh_token';
     const token = req.cookies?.[cookieName] || refreshTokenDto.refresh_token;
-    
+
     try {
       if (token) {
         const payload = this.jwtService.verify(token, {
@@ -140,6 +150,31 @@ export class AuthController {
     });
 
     return { message: 'Logged out from all devices successfully' };
+  }
+
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @Request() req: ExpressRequest,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    const user = (req as any).user;
+
+    // Validate passwords match
+    if (changePasswordDto.newPassword !== changePasswordDto.confirmPassword) {
+      throw new UnauthorizedException('Password baru tidak cocok');
+    }
+
+    await this.authService.changePassword(
+      user.sub,
+      changePasswordDto.currentPassword,
+      changePasswordDto.newPassword,
+    );
+
+    return {
+      success: true,
+      message: 'Password berhasil diubah. Silakan login ulang.',
+    };
   }
 
   @Get('me')

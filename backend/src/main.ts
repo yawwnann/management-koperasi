@@ -2,7 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
-import cookieParser = require('cookie-parser');
+import cookieParser from 'cookie-parser';
 
 // Load environment variables
 dotenv.config();
@@ -41,4 +41,4 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`🚀 Application is running on port ${port}`);
 }
-bootstrap();
+void bootstrap();

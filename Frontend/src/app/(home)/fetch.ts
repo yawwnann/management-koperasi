@@ -4,6 +4,7 @@
  */
 
 import { dashboardApi, savingsApi, paymentsApi, withdrawalsApi } from '@/lib/api';
+import { AdminDashboardData, UserDashboardData } from '@/types/api.types';
 
 // Helper function to format currency
 const formatCurrency = (amount: number) => {
@@ -14,60 +15,8 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-export interface AdminDashboardData {
-  totalMembers: number;
-  totalSavings: number;
-  pendingPayments: number;
-  pendingWithdrawals: number;
-  approvedPayments: number;
-  rejectedPayments: number;
-  totalPayments: number;
-  totalWithdrawals: number;
-  recentActivities: Array<{
-    id: string;
-    type: 'payment' | 'withdrawal';
-    userName: string;
-    amount: number;
-    status: string;
-    createdAt: string;
-  }>;
-  recentApprovals: Array<{
-    id: string;
-    type: 'payment' | 'withdrawal';
-    userName: string;
-    amount: number;
-    status: 'APPROVED' | 'REJECTED';
-    approvedAt: string;
-  }>;
-  recentAlerts: Array<{
-    id: number;
-    type: string;
-    message: string;
-    detail: string;
-    time: string;
-    status: 'pending' | 'success' | 'info';
-  }>;
-  paymentTrend: {
-    labels: string[];
-    payments: number[];
-    withdrawals: number[];
-  };
-  paymentStatus: {
-    approved: number;
-    pending: number;
-    rejected: number;
-  };
-  savingsBreakdown: {
-    pokok: number;
-    wajib: number;
-    sukarela: number;
-  };
-  memberActivity: {
-    angkatan: string[];
-    members: number[];
-    savings: number[];
-  };
-}
+// Re-export AdminDashboardData for use in page.tsx
+export type { AdminDashboardData };
 
 export interface AnggotaDashboardData {
   mySavings: {
@@ -98,88 +47,27 @@ export interface AnggotaDashboardData {
  * Now uses single endpoint from backend
  */
 export async function fetchAdminDashboard(): Promise<AdminDashboardData> {
-  const response = await dashboardApi.getAdminDashboard();
-  
+  const response = await dashboardApi.getDashboard();
+
   if (response.success && response.data) {
     return response.data as AdminDashboardData;
   }
-  
-  throw new Error('Failed to fetch dashboard data');
+
+  throw new Error('Failed to fetch admin dashboard data');
 }
 
 /**
  * Fetch dashboard data for ANGGOTA role
+ * Now uses new unified /api/dashboard endpoint
  */
-export async function fetchAnggotaDashboard(): Promise<AnggotaDashboardData> {
-  const [savingsResponse, paymentsResponse, withdrawalsResponse] = await Promise.all([
-    savingsApi.getMySavings(),
-    paymentsApi.getList(),
-    withdrawalsApi.getList(),
-  ]);
+export async function fetchAnggotaDashboard(): Promise<UserDashboardData> {
+  const response = await dashboardApi.getDashboard();
 
-  const mySavings = savingsResponse.success ? (savingsResponse.data as any) : null;
-
-  const payments = paymentsResponse.success ? (paymentsResponse.data as any[]) : [];
-  const withdrawals = withdrawalsResponse.success ? (withdrawalsResponse.data as any[]) : [];
-
-  const lastPayment = payments.length > 0 ? payments[0] : null;
-  const lastWithdrawal = withdrawals.length > 0 ? withdrawals[0] : null;
-
-  // Generate last 6 months labels
-  const months = [];
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - i);
-    months.push(`${monthNames[d.getMonth()]} ${d.getFullYear()}`);
+  if (response.success && response.data) {
+    return response.data as UserDashboardData;
   }
 
-  // Group payments by month for the chart
-  const paymentsByMonth = new Array(6).fill(0);
-  payments.forEach((payment: any) => {
-    const paymentDate = new Date(payment.createdAt);
-    for (let i = 0; i < 6; i++) {
-      const targetDate = new Date();
-      targetDate.setMonth(targetDate.getMonth() - (5 - i));
-      if (
-        paymentDate.getMonth() === targetDate.getMonth() &&
-        paymentDate.getFullYear() === targetDate.getFullYear()
-      ) {
-        paymentsByMonth[i] += payment.amount;
-        break;
-      }
-    }
-  });
-
-  return {
-    mySavings: mySavings
-      ? {
-          balance: mySavings.balance,
-          updatedAt: mySavings.updatedAt,
-        }
-      : null,
-    lastPayment: lastPayment
-      ? {
-          id: lastPayment.id,
-          amount: lastPayment.amount,
-          status: lastPayment.status,
-          createdAt: lastPayment.createdAt,
-        }
-      : null,
-    lastWithdrawal: lastWithdrawal
-      ? {
-          id: lastWithdrawal.id,
-          amount: lastWithdrawal.amount,
-          status: lastWithdrawal.status,
-          createdAt: lastWithdrawal.createdAt,
-        }
-      : null,
-    accountStatus: mySavings ? 'Active' : 'No Savings Account',
-    paymentHistory: {
-      labels: months,
-      amounts: paymentsByMonth,
-    },
-  };
+  throw new Error('Failed to fetch user dashboard data');
 }
 
 /**

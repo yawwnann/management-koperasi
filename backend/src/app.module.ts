@@ -19,6 +19,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { EmailModule } from './email/email.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { FakultasModule } from './fakultas/fakultas.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     EmailModule,
     NotificationsModule,
     DashboardModule,
+    FakultasModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -4,7 +4,7 @@ import {
   IsString,
   IsOptional,
   IsEnum,
-  IsBoolean,
+  IsDateString,
 } from 'class-validator';
 
 export class CreateUserDto {
@@ -17,9 +17,8 @@ export class CreateUserDto {
   email: string;
 
   @IsString()
-  @IsNotEmpty()
-  @IsString()
-  password: string;
+  @IsOptional()
+  password?: string;
 
   @IsEnum(['ANGGOTA', 'ADMIN'])
   @IsOptional()
@@ -28,4 +27,24 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   angkatan?: string;
+
+  @IsString()
+  @IsOptional()
+  nim?: string; // Nomor Induk Mahasiswa
+
+  @IsString()
+  @IsOptional()
+  fakultas?: string; // Fakultas
+
+  @IsString()
+  @IsOptional()
+  prodi?: string; // Program Studi/Jurusan
+
+  @IsDateString()
+  @IsOptional()
+  birthDate?: string; // Tanggal Lahir (YYYY-MM-DD)
+
+  @IsString()
+  @IsOptional()
+  address?: string; // Alamat
 }

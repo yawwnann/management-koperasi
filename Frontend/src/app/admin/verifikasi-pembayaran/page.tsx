@@ -79,7 +79,7 @@ function VerifikasiPembayaranContent() {
     setProcessing(true);
     try {
       await paymentsApi.approve(selectedPayment.id, {
-        approved: true,
+        status: "APPROVED",
         rejectionReason: rejectionReason || undefined,
       });
 
@@ -100,7 +100,7 @@ function VerifikasiPembayaranContent() {
     setProcessing(true);
     try {
       await paymentsApi.approve(selectedPayment.id, {
-        approved: false,
+        status: "REJECTED",
         rejectionReason: rejectionReason || "Tidak ada alasan",
       });
 

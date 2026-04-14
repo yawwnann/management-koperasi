@@ -70,6 +70,7 @@ const InputGroup: React.FC<InputGroupProps> = ({
           required={required}
           disabled={disabled}
           data-active={active}
+          suppressHydrationWarning
         />
 
         {icon}

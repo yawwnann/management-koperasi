@@ -33,6 +33,11 @@ model User {
   password  String
   role      Role     @default(ANGGOTA)
   angkatan  String?
+  nim       String?  // Nomor Induk Mahasiswa
+  fakultas  String?  // Fakultas
+  prodi     String?  // Program Studi/Jurusan
+  birthDate DateTime? // Tanggal Lahir
+  address   String?   // Alamat
   photo     String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -45,6 +50,7 @@ model User {
   verifiedPayments   Payment[]  @relation("VerifiedPayments")
   verifiedWithdrawals Withdrawal[] @relation("VerifiedWithdrawals")
   refreshTokens RefreshToken[]
+  loginHistory  LoginHistory[]
 
   @@map("users")
 }
@@ -116,4 +122,39 @@ model RefreshToken {
   @@index([userId])
   @@index([token])
   @@map("refresh_tokens")
+}
+
+model LoginHistory {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Connection info
+  ipAddress      String
+  userAgent      String
+  
+  // Parsed browser/device info
+  browser        String?
+  browserVersion String?
+  os             String?
+  osVersion      String?
+  device         String?      // Desktop, Mobile, Tablet
+  deviceBrand    String?
+  deviceModel    String?
+  
+  // Location info
+  country        String?
+  city           String?
+  region         String?
+  
+  // Status
+  status         String       // SUCCESS, FAILED
+  failureReason  String?
+  
+  createdAt      DateTime @default(now())
+  
+  @@index([userId])
+  @@index([createdAt])
+  @@index([ipAddress])
+  @@map("login_history")
 }

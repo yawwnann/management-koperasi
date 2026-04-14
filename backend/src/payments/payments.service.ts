@@ -9,6 +9,7 @@ import { CreatePaymentDto } from './dto/create-payment.dto';
 import { ApprovePaymentDto } from './dto/approve-payment.dto';
 import { EmailService } from '../email/email.service';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PaymentsService {
@@ -16,6 +17,7 @@ export class PaymentsService {
     private prisma: PrismaService,
     private emailService: EmailService,
     private notificationsGateway: NotificationsGateway,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -51,6 +53,15 @@ export class PaymentsService {
       status: payment.status,
     });
 
+    // Create notification for REST API
+    await this.notificationsService.create({
+      type: 'payment',
+      title: 'Pembayaran Baru',
+      message: `${payment.user.name} mengajukan pembayaran sebesar Rp${Number(payment.nominal).toLocaleString('id-ID')}`,
+      actionUrl: `/admin/verifikasi-pembayaran/${payment.id}`,
+      isAdminNotification: true,
+    });
+
     // Send email notification to admins (fetch admin emails from users table)
     const admins = await this.prisma.user.findMany({
       where: { role: 'ADMIN' },
@@ -68,9 +79,40 @@ export class PaymentsService {
     return payment;
   }
 
-  async findAll(role: string, userId: string) {
+  async findAll(
+    role: string,
+    userId: string,
+    startDate?: string,
+    endDate?: string,
+    status?: string,
+  ) {
+    // Build where clause
+    const where: Prisma.PaymentWhereInput = {};
+
+    // Add user filter
+    if (role !== 'ADMIN') {
+      where.userId = userId;
+    }
+
+    // Add date filters
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate);
+      }
+    }
+
+    // Add status filter
+    if (status) {
+      where.status = status as any;
+    }
+
     if (role === 'ADMIN') {
       return this.prisma.payment.findMany({
+        where,
         include: {
           user: {
             select: {
@@ -88,7 +130,7 @@ export class PaymentsService {
     }
 
     return this.prisma.payment.findMany({
-      where: { userId },
+      where,
       include: {
         user: {
           select: {
@@ -163,6 +205,15 @@ export class PaymentsService {
       userName: updatedPayment.user.name,
       amount: Number(updatedPayment.nominal),
       status: updatedPayment.status,
+    });
+
+    // Create notification for user via REST API
+    await this.notificationsService.create({
+      type: 'payment',
+      title: `Pembayaran ${updatedPayment.status === 'APPROVED' ? 'Disetujui' : 'Ditolak'}`,
+      message: `Pembayaran Anda sebesar Rp${Number(updatedPayment.nominal).toLocaleString('id-ID')} telah ${updatedPayment.status === 'APPROVED' ? 'disetujui' : 'ditolak'}`,
+      actionUrl: `/pembayaran/riwayat/${updatedPayment.id}`,
+      userId: updatedPayment.userId,
     });
 
     // Send email notification to the user

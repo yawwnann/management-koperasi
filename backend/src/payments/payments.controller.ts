@@ -5,6 +5,7 @@ import {
   Patch,
   Body,
   Param,
+  Query,
   UseInterceptors,
   UploadedFile,
   Req,
@@ -38,6 +39,7 @@ export class PaymentsController {
   async create(
     @Req() req: JwtRequest,
     @Body() createPaymentDto: CreatePaymentDto,
+
     @UploadedFile() file: any,
   ) {
     if (!file) {
@@ -65,8 +67,19 @@ export class PaymentsController {
   }
 
   @Get()
-  findAll(@Req() req: JwtRequest) {
-    return this.paymentsService.findAll(req.user.role, req.user.sub);
+  findAll(
+    @Req() req: JwtRequest,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.paymentsService.findAll(
+      req.user.role,
+      req.user.sub,
+      startDate,
+      endDate,
+      status,
+    );
   }
 
   @Get(':id')

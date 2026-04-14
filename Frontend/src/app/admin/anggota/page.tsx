@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ProtectedRoute } from "@/components/protected-route";
-import { usersApi } from "@/lib/api";
-import type { User } from "@/types/api.types";
+import { usersApi, fakultasApi } from "@/lib/api";
+import type { User, FakultasData } from "@/types/api.types";
 
 type RoleType = "ADMIN" | "ANGGOTA";
 
@@ -13,6 +13,9 @@ interface FormState {
   email: string;
   role: RoleType;
   angkatan: string;
+  nim: string;
+  fakultas: string;
+  prodi: string;
 }
 
 const initialFormState: FormState = {
@@ -20,6 +23,9 @@ const initialFormState: FormState = {
   email: "",
   role: "ANGGOTA",
   angkatan: "",
+  nim: "",
+  fakultas: "",
+  prodi: "",
 };
 
 export default function AnggotaPage() {
@@ -44,9 +50,15 @@ function AnggotaContent() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
+  
+  // Fakultas state
+  const [fakultasList, setFakultasList] = useState<FakultasData[]>([]);
+  const [prodiList, setProdiList] = useState<string[]>([]);
+  const [fakultasLoading, setFakultasLoading] = useState(true);
 
   useEffect(() => {
     loadMembers();
+    loadFakultas();
   }, []);
 
   async function loadMembers() {
@@ -64,6 +76,31 @@ function AnggotaContent() {
     }
   }
 
+  async function loadFakultas() {
+    setFakultasLoading(true);
+    try {
+      const response = await fakultasApi.getAllFakultas();
+      if (response.success && response.data?.fakultas) {
+        setFakultasList(response.data.fakultas);
+      }
+    } catch (error) {
+      console.error("Failed to load fakultas:", error);
+    } finally {
+      setFakultasLoading(false);
+    }
+  }
+
+  const handleFakultasChange = (fakultasName: string) => {
+    setForm((prev) => ({ ...prev, fakultas: fakultasName, prodi: "" }));
+    
+    const selectedFakultas = fakultasList.find((f) => f.nama === fakultasName);
+    if (selectedFakultas) {
+      setProdiList(selectedFakultas.jurusan);
+    } else {
+      setProdiList([]);
+    }
+  };
+
   const openCreateModal = () => {
     setEditingMember(null);
     setForm(initialFormState);
@@ -78,7 +115,19 @@ function AnggotaContent() {
       email: member.email,
       role: member.role,
       angkatan: member.angkatan,
+      nim: member.nim || "",
+      fakultas: member.fakultas || "",
+      prodi: member.prodi || "",
     });
+    
+    // Load prodi list based on fakultas
+    if (member.fakultas) {
+      const selectedFakultas = fakultasList.find((f) => f.nama === member.fakultas);
+      if (selectedFakultas) {
+        setProdiList(selectedFakultas.jurusan);
+      }
+    }
+    
     setModalOpen(true);
     setMessage(null);
   };
@@ -87,6 +136,7 @@ function AnggotaContent() {
     setModalOpen(false);
     setEditingMember(null);
     setForm(initialFormState);
+    setProdiList([]);
   };
 
   const handleSubmit = useCallback(
@@ -113,21 +163,21 @@ function AnggotaContent() {
       setFormLoading(true);
 
       try {
+        const userData = {
+          name: form.name,
+          email: form.email,
+          role: form.role,
+          angkatan: form.angkatan,
+          nim: form.nim || undefined,
+          fakultas: form.fakultas || undefined,
+          prodi: form.prodi || undefined,
+        };
+
         if (editingMember) {
-          await usersApi.update(editingMember.id, {
-            name: form.name,
-            email: form.email,
-            role: form.role,
-            angkatan: form.angkatan,
-          });
+          await usersApi.update(editingMember.id, userData);
           setMessage({ type: "success", text: "Anggota berhasil diperbarui." });
         } else {
-          await usersApi.create({
-            name: form.name,
-            email: form.email,
-            role: form.role,
-            angkatan: form.angkatan,
-          });
+          await usersApi.create(userData);
           setMessage({
             type: "success",
             text: "Anggota berhasil ditambahkan.",
@@ -135,6 +185,7 @@ function AnggotaContent() {
         }
         setForm(initialFormState);
         setEditingMember(null);
+        setProdiList([]);
         await loadMembers();
         setTimeout(() => setModalOpen(false), 1000);
       } catch (error: any) {
@@ -431,8 +482,9 @@ function AnggotaContent() {
       {/* Modal */}
       {modalOpen && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
-          <div className="dark:bg-boxdark w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
+          <div className="dark:bg-boxdark flex h-[90vh] w-full max-w-md flex-col rounded-lg bg-white shadow-xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-stroke px-6 py-4 dark:border-strokedark">
               <h3 className="text-lg font-semibold text-dark dark:text-white">
                 {editingMember ? "Edit Anggota" : "Tambah Anggota Baru"}
               </h3>
@@ -456,19 +508,21 @@ function AnggotaContent() {
               </button>
             </div>
 
-            {message && (
-              <div
-                className={`mb-4 rounded-md border p-3 text-sm ${
-                  message.type === "success"
-                    ? "border-green-300 bg-green-50 text-green-700 dark:border-green-600 dark:bg-green-900/20 dark:text-green-400"
-                    : "border-red-300 bg-red-50 text-red-700 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400"
-                }`}
-              >
-                {message.text}
-              </div>
-            )}
+            {/* Modal Body (Scrollable) */}
+            <div className="custom-scrollbar flex-1 overflow-y-auto px-6 py-4">
+              {message && (
+                <div
+                  className={`mb-4 rounded-md border p-3 text-sm ${
+                    message.type === "success"
+                      ? "border-green-300 bg-green-50 text-green-700 dark:border-green-600 dark:bg-green-900/20 dark:text-green-400"
+                      : "border-red-300 bg-red-50 text-red-700 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400"
+                  }`}
+                >
+                  {message.text}
+                </div>
+              )}
 
-            <form onSubmit={handleSubmit}>
+              <form id="add-member-form" onSubmit={handleSubmit}>
               {/* Nama */}
               <div className="mb-4">
                 <label
@@ -530,7 +584,7 @@ function AnggotaContent() {
               </div>
 
               {/* Angkatan */}
-              <div className="mb-6">
+              <div className="mb-4">
                 <label
                   className="mb-1 block text-sm font-medium text-dark dark:text-white"
                   htmlFor="angkatan"
@@ -549,52 +603,131 @@ function AnggotaContent() {
                 />
               </div>
 
-              {/* Buttons */}
-              <div className="flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="dark:border-strokedark rounded-lg border border-stroke px-4 py-2 font-medium text-gray-600 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
-                  disabled={formLoading}
+              {/* NIM */}
+              <div className="mb-4">
+                <label
+                  className="mb-1 block text-sm font-medium text-dark dark:text-white"
+                  htmlFor="nim"
                 >
-                  Batal
-                </button>
-                <button
-                  type="submit"
+                  NIM
+                </label>
+                <input
+                  id="nim"
+                  type="text"
+                  value={form.nim}
+                  onChange={(e) => handleFormChange("nim", e.target.value)}
+                  placeholder="Contoh: 215410001"
+                  className="dark:border-strokedark w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none transition focus:border-primary dark:text-white dark:focus:border-primary"
                   disabled={formLoading}
-                  className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+                />
+                {form.role === 'ANGGOTA' && (
+                  <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                    ℹ️ Password default: NIM (Contoh: 215410001)
+                  </p>
+                )}
+              </div>
+
+              {/* Fakultas */}
+              <div className="mb-4">
+                <label
+                  className="mb-1 block text-sm font-medium text-dark dark:text-white"
+                  htmlFor="fakultas"
                 >
-                  {formLoading ? (
-                    <>
-                      <svg
-                        className="mr-2 h-4 w-4 animate-spin"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                        />
-                      </svg>
-                      Menyimpan...
-                    </>
-                  ) : editingMember ? (
-                    "Simpan Perubahan"
-                  ) : (
-                    "Tambah Anggota"
-                  )}
-                </button>
+                  Fakultas
+                </label>
+                <select
+                  id="fakultas"
+                  value={form.fakultas}
+                  onChange={(e) => handleFakultasChange(e.target.value)}
+                  className="dark:border-strokedark w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none transition focus:border-primary dark:text-white dark:focus:border-primary"
+                  disabled={formLoading || fakultasLoading}
+                >
+                  <option value="">-- Pilih Fakultas --</option>
+                  {fakultasList.map((fak) => (
+                    <option key={fak.nama} value={fak.nama}>
+                      {fak.nama}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Prodi/Jurusan */}
+              <div className="mb-6">
+                <label
+                  className="mb-1 block text-sm font-medium text-dark dark:text-white"
+                  htmlFor="prodi"
+                >
+                  Prodi/Jurusan
+                </label>
+                <select
+                  id="prodi"
+                  value={form.prodi}
+                  onChange={(e) => handleFormChange("prodi", e.target.value)}
+                  className="dark:border-strokedark w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none transition focus:border-primary dark:text-white dark:focus:border-primary"
+                  disabled={formLoading || !form.fakultas || prodiList.length === 0}
+                >
+                  <option value="">-- Pilih Prodi --</option>
+                  {prodiList.map((prodi) => (
+                    <option key={prodi} value={prodi}>
+                      {prodi}
+                    </option>
+                  ))}
+                </select>
+                {form.fakultas && prodiList.length === 0 && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Tidak ada prodi tersedia
+                  </p>
+                )}
               </div>
             </form>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end gap-3 border-t border-stroke px-6 py-4 dark:border-strokedark">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="rounded-lg border border-stroke px-4 py-2 font-medium text-gray-600 transition hover:bg-gray-100 dark:border-strokedark dark:text-gray-400 dark:hover:bg-gray-700"
+                disabled={formLoading}
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                form="add-member-form"
+                disabled={formLoading}
+                className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {formLoading ? (
+                  <>
+                    <svg
+                      className="mr-2 h-4 w-4 animate-spin"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
+                    </svg>
+                    Menyimpan...
+                  </>
+                ) : editingMember ? (
+                  "Simpan Perubahan"
+                ) : (
+                  "Tambah Anggota"
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

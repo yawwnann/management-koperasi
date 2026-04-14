@@ -23,8 +23,20 @@ export class UsersService {
       throw new ConflictException('Email already exists');
     }
 
+    // Handle Password Logic
+    let passwordToHash = createUserDto.password;
+
+    // If no password provided and it's a member (ANGGOTA), generate default password using NIM
+    if (!passwordToHash && createUserDto.role === 'ANGGOTA' && createUserDto.nim) {
+      passwordToHash = createUserDto.nim;
+    }
+
+    if (!passwordToHash) {
+      throw new BadRequestException('Password is required, or NIM for auto-generation.');
+    }
+
     // Hash password
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+    const hashedPassword = await bcrypt.hash(passwordToHash, 10);
 
     // Create user with initial savings
     const user = await this.prisma.user.create({
