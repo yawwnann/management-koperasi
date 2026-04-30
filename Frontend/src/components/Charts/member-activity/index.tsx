@@ -43,7 +43,7 @@ export function MemberActivityChart({ data }: MemberActivityChartProps) {
       },
       stacked: false,
     },
-    colors: ["#22AD5C", "#3C50E0"],
+    colors: ["#8099EC", "#3C50E0"],
     series: [
       {
         name: "Jumlah Anggota",

@@ -18,7 +18,7 @@ const config: Config = {
         current: "currentColor",
         transparent: "transparent",
         white: "#FFFFFF",
-        primary: "#22AD5C",
+        primary: "#3C50E0",
         stroke: "#E6EBF1",
         "stroke-dark": "#27303E",
         // Backward-compatible aliases used throughout existing components
@@ -45,20 +45,6 @@ const config: Config = {
           5: "#9CA3AF",
           6: "#6B7280",
           7: "#374151",
-        },
-        green: {
-          DEFAULT: "#22AD5C",
-          dark: "#1A8245",
-          light: {
-            DEFAULT: "#2CD673",
-            1: "#10B981",
-            2: "#57DE8F",
-            3: "#82E6AC",
-            4: "#ACEFC8",
-            5: "#C2F3D6",
-            6: "#DAF8E6",
-            7: "#E9FBF0",
-          },
         },
         red: {
           DEFAULT: "#F23030",

@@ -41,6 +41,12 @@ export class SavingsService {
       select: { nominal: true, description: true },
     });
 
+    // Get all approved withdrawals for this user
+    const approvedWithdrawals = await this.prisma.withdrawal.findMany({
+      where: { userId, status: 'APPROVED' },
+      select: { nominal: true, savingType: true },
+    });
+
     // Calculate breakdown by type
     const breakdown = {
       pokok: 0,
@@ -58,6 +64,20 @@ export class SavingsService {
         breakdown.wajib += amount;
       } else {
         breakdown.sukarela += amount;
+      }
+    });
+
+    // Subtract approved withdrawals by type
+    approvedWithdrawals.forEach((withdrawal) => {
+      const amount = Number(withdrawal.nominal);
+      const type = withdrawal.savingType.toLowerCase();
+
+      if (type === 'pokok') {
+        breakdown.pokok -= amount;
+      } else if (type === 'wajib') {
+        breakdown.wajib -= amount;
+      } else {
+        breakdown.sukarela -= amount;
       }
     });
 

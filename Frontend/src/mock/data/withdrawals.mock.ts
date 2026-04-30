@@ -21,7 +21,7 @@ export let MOCK_WITHDRAWALS: Withdrawal[] = [
     id: "withdrawal-1",
     userId: "user-2",
     userName: "Anggota KOPMA",
-    amount: 200000,
+    nominal: 200000,
     status: "APPROVED",
     approvedBy: "user-1",
     approvedAt: monthsAgoISO(5, 20, 10),
@@ -32,7 +32,7 @@ export let MOCK_WITHDRAWALS: Withdrawal[] = [
     id: "withdrawal-2",
     userId: "user-3",
     userName: "Budi Santoso",
-    amount: 500000,
+    nominal: 500000,
     status: "APPROVED",
     approvedBy: "user-1",
     approvedAt: monthsAgoISO(4, 21, 11),
@@ -43,7 +43,7 @@ export let MOCK_WITHDRAWALS: Withdrawal[] = [
     id: "withdrawal-3",
     userId: "user-4",
     userName: "Siti Rahma",
-    amount: 300000,
+    nominal: 300000,
     status: "PENDING",
     createdAt: monthsAgoISO(3, 22, 14),
     updatedAt: monthsAgoISO(3, 22, 14),
@@ -52,7 +52,7 @@ export let MOCK_WITHDRAWALS: Withdrawal[] = [
     id: "withdrawal-4",
     userId: "user-5",
     userName: "Ahmad Fauzi",
-    amount: 1000000,
+    nominal: 1000000,
     status: "PENDING",
     createdAt: monthsAgoISO(2, 23, 10),
     updatedAt: monthsAgoISO(2, 23, 10),
@@ -61,7 +61,7 @@ export let MOCK_WITHDRAWALS: Withdrawal[] = [
     id: "withdrawal-5",
     userId: "user-2",
     userName: "Anggota KOPMA",
-    amount: 150000,
+    nominal: 150000,
     status: "REJECTED",
     approvedBy: "user-1",
     approvedAt: monthsAgoISO(1, 24, 9),
@@ -72,14 +72,18 @@ export let MOCK_WITHDRAWALS: Withdrawal[] = [
 ];
 
 /**
- * Get all withdrawals (filtered by user if ANGGOTA)
+ * Get all withdrawals (filtered by user if userId is provided)
  */
 export function getWithdrawalsList(
   queryParams?: Record<string, string>,
 ): Withdrawal[] {
-  // In real app, filter by user role
-  // For mock, return all
-  return MOCK_WITHDRAWALS;
+  let withdrawals = MOCK_WITHDRAWALS;
+
+  if (queryParams?.userId) {
+    withdrawals = withdrawals.filter((w) => w.userId === queryParams.userId);
+  }
+
+  return withdrawals;
 }
 
 /**
@@ -99,7 +103,7 @@ export function createWithdrawal(
     id: `withdrawal-${Date.now()}`,
     userId: input.userId || "user-2",
     userName: input.userName || "Anggota KOPMA",
-    amount: input.amount,
+    nominal: input.amount,
     status: "PENDING",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -131,7 +135,7 @@ export function approveWithdrawal(
 
   const updatedWithdrawal: Withdrawal = {
     ...withdrawal,
-    status: input.approved ? "APPROVED" : "REJECTED",
+    status: input.status,
     approvedBy: "user-1",
     approvedAt: new Date().toISOString(),
     rejectionReason: input.rejectionReason,

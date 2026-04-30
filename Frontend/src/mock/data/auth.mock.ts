@@ -24,7 +24,7 @@ const MOCK_USERS: (User & { password: string; photo?: string })[] = [
     name: "Anggota KOPMA",
     role: "ANGGOTA",
     angkatan: "2021",
-    photo: "https://placehold.co/png/200x200/10b981/ffffff?text=AK",
+    photo: "https://placehold.co/png/200x200/3c50e0/ffffff?text=AK",
     isActive: true,
     createdAt: "2024-01-02T00:00:00Z",
     updatedAt: "2024-01-02T00:00:00Z",
@@ -91,7 +91,12 @@ export function handleLogin(credentials: {
 export function handleAuthMe(
   token: string | null,
 ): { success: true; data: User } | { success: false; error: string } {
-  if (!token || token !== currentUserToken) {
+  if (!token) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  const isMockToken = token.startsWith("mock-jwt-token-");
+  if (!isMockToken && token !== currentUserToken) {
     return { success: false, error: "Not authenticated" };
   }
 

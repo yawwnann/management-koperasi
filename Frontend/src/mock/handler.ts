@@ -27,12 +27,7 @@ const FAKULTAS_DATA = {
     },
     {
       nama: "Fakultas Ekonomi dan Bisnis",
-      jurusan: [
-        "Akuntansi",
-        "Ekonomi Pembangunan",
-        "Manajemen",
-        "Perpajakan",
-      ],
+      jurusan: ["Akuntansi", "Ekonomi Pembangunan", "Manajemen", "Perpajakan"],
     },
     {
       nama: "Fakultas Keguruan dan Ilmu Pendidikan",
@@ -55,11 +50,7 @@ const FAKULTAS_DATA = {
     },
     {
       nama: "Fakultas Sastra, Budaya, dan Komunikasi",
-      jurusan: [
-        "Ilmu Komunikasi",
-        "Sastra Inggris",
-        "Seni Pertunjukan",
-      ],
+      jurusan: ["Ilmu Komunikasi", "Sastra Inggris", "Seni Pertunjukan"],
     },
     {
       nama: "Fakultas Sains dan Teknologi Terapan",
@@ -76,10 +67,7 @@ const FAKULTAS_DATA = {
     },
     {
       nama: "Fakultas Kesehatan Masyarakat",
-      jurusan: [
-        "Gizi",
-        "Kesehatan Masyarakat",
-      ],
+      jurusan: ["Gizi", "Kesehatan Masyarakat"],
     },
     {
       nama: "Fakultas Teknologi Industri",
@@ -246,25 +234,33 @@ async function handleAuthMe(): Promise<ApiResponse> {
       : createMockErrorResponse(401, response.error || "Not authenticated");
   }
 
-  const token = getAuthToken();
-  const response = await fetch(`${API_BASE_URL}/auth/me`, {
-    method: "GET",
-    headers: createHeaders(token),
-    credentials: "include",
-  });
+  try {
+    const token = getAuthToken();
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: createHeaders(token),
+      credentials: "include",
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Failed to get user data");
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to get user data");
+    }
+
+    const data = await response.json();
+
+    // Wrap backend response in ApiResponse format
+    return {
+      success: true,
+      data,
+    };
+  } catch {
+    const token = getAuthToken();
+    const fallback = mockData.handleAuthMe(token);
+    return fallback.success
+      ? createMockResponse(fallback.data)
+      : createMockErrorResponse(401, fallback.error || "Not authenticated");
   }
-
-  const data = await response.json();
-
-  // Wrap backend response in ApiResponse format
-  return {
-    success: true,
-    data: data,
-  };
 }
 
 /**
@@ -384,7 +380,9 @@ async function handleUpdateMe(data: any): Promise<ApiResponse> {
     await delay();
     // Mock: update local storage user data
     if (typeof window !== "undefined") {
-      const currentUser = JSON.parse(localStorage.getItem("current_user") || "{}");
+      const currentUser = JSON.parse(
+        localStorage.getItem("current_user") || "{}",
+      );
       const updatedUser = { ...currentUser, ...data };
       localStorage.setItem("current_user", JSON.stringify(updatedUser));
     }
@@ -829,6 +827,31 @@ async function handleCreateWithdrawal(
 }
 
 /**
+ * Handles withdraw all
+ */
+async function handleWithdrawAll(data: any): Promise<ApiResponse> {
+  if (USE_MOCK) {
+    await delay();
+    return createMockErrorResponse(501, "Mock for withdraw all is not yet implemented");
+  }
+
+  const token = getAuthToken();
+  const response = await fetch(`${API_BASE_URL}/withdrawals/withdraw-all`, {
+    method: "POST",
+    headers: createHeaders(token),
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to withdraw all");
+  }
+
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
+}
+
+/**
  * Handles approve/reject withdrawal
  */
 async function handleApproveWithdrawal(
@@ -876,19 +899,28 @@ async function handleMySavings(): Promise<ApiResponse> {
     return createMockResponse(savings);
   }
 
-  const token = getAuthToken();
-  const response = await fetch(`${API_BASE_URL}/savings/me`, {
-    method: "GET",
-    headers: createHeaders(token),
-  });
+  try {
+    const token = getAuthToken();
+    const response = await fetch(`${API_BASE_URL}/savings/me`, {
+      method: "GET",
+      headers: createHeaders(token),
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Failed to fetch savings");
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to fetch savings");
+    }
+
+    const responseData = await response.json();
+    return wrapBackendResponse(responseData);
+  } catch {
+    const token = getAuthToken();
+    const savings = mockData.getMySavings(token);
+    if (!savings) {
+      return createMockErrorResponse(404, "Savings not found");
+    }
+    return createMockResponse(savings);
   }
-
-  const responseData = await response.json();
-  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -901,19 +933,24 @@ async function handleAllSavings(): Promise<ApiResponse> {
     return createMockResponse(savings);
   }
 
-  const token = getAuthToken();
-  const response = await fetch(`${API_BASE_URL}/savings`, {
-    method: "GET",
-    headers: createHeaders(token),
-  });
+  try {
+    const token = getAuthToken();
+    const response = await fetch(`${API_BASE_URL}/savings`, {
+      method: "GET",
+      headers: createHeaders(token),
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Failed to fetch all savings");
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to fetch all savings");
+    }
+
+    const responseData = await response.json();
+    return wrapBackendResponse(responseData);
+  } catch {
+    const savings = mockData.getAllSavings();
+    return createMockResponse(savings);
   }
-
-  const responseData = await response.json();
-  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -940,19 +977,39 @@ async function handleSavingsBreakdown(): Promise<ApiResponse> {
     });
   }
 
-  const token = getAuthToken();
-  const response = await fetch(`${API_BASE_URL}/savings/me/breakdown`, {
-    method: "GET",
-    headers: createHeaders(token),
-  });
+  try {
+    const token = getAuthToken();
+    const response = await fetch(`${API_BASE_URL}/savings/me/breakdown`, {
+      method: "GET",
+      headers: createHeaders(token),
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || "Failed to fetch savings breakdown");
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to fetch savings breakdown");
+    }
+
+    const responseData = await response.json();
+    return wrapBackendResponse(responseData);
+  } catch {
+    const mySavings = mockData.getMySavings(getAuthToken());
+    const balance = mySavings?.balance || 0;
+    const breakdown = {
+      pokok: Math.round(balance * 0.2),
+      wajib: Math.round(balance * 0.5),
+      sukarela: Math.round(balance * 0.3),
+    };
+
+    return createMockResponse({
+      total: balance,
+      breakdown,
+      details: [
+        { type: "Simpanan Pokok", amount: breakdown.pokok },
+        { type: "Simpanan Wajib", amount: breakdown.wajib },
+        { type: "Simpanan Sukarela", amount: breakdown.sukarela },
+      ],
+    });
   }
-
-  const responseData = await response.json();
-  return wrapBackendResponse(responseData);
 }
 
 /**
@@ -963,10 +1020,23 @@ async function handleSavingsChart(): Promise<ApiResponse> {
     await delay();
     const mySavings = mockData.getMySavings(getAuthToken());
     const balance = mySavings?.balance || 7594176;
-    
+
     // Generate last 6 months labels
     const months: string[] = [];
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "Mei",
+      "Jun",
+      "Jul",
+      "Agu",
+      "Sep",
+      "Okt",
+      "Nov",
+      "Des",
+    ];
     for (let i = 5; i >= 0; i--) {
       const d = new Date();
       d.setMonth(d.getMonth() - i);
@@ -975,12 +1045,12 @@ async function handleSavingsChart(): Promise<ApiResponse> {
 
     // Generate chart data with varying values (gradual increase with realistic progression)
     const baseValues = [
-      Math.round(balance * 0.25 + Math.random() * 100000),  // 6 months ago: ~25%
-      Math.round(balance * 0.35 + Math.random() * 100000),  // 5 months ago: ~35%
-      Math.round(balance * 0.50 + Math.random() * 100000),  // 4 months ago: ~50%
-      Math.round(balance * 0.65 + Math.random() * 100000),  // 3 months ago: ~65%
-      Math.round(balance * 0.80 + Math.random() * 100000),  // 2 months ago: ~80%
-      Math.round(balance * 0.95 + Math.random() * 100000),  // current: ~95-100%
+      Math.round(balance * 0.25 + Math.random() * 100000), // 6 months ago: ~25%
+      Math.round(balance * 0.35 + Math.random() * 100000), // 5 months ago: ~35%
+      Math.round(balance * 0.5 + Math.random() * 100000), // 4 months ago: ~50%
+      Math.round(balance * 0.65 + Math.random() * 100000), // 3 months ago: ~65%
+      Math.round(balance * 0.8 + Math.random() * 100000), // 2 months ago: ~80%
+      Math.round(balance * 0.95 + Math.random() * 100000), // current: ~95-100%
     ];
 
     const chartData = months.map((label, index) => ({
@@ -1239,14 +1309,18 @@ async function handleFakultasList(): Promise<ApiResponse> {
 /**
  * Handles fakultas jurusan
  */
-async function handleFakultasJurusan(fakultasName?: string): Promise<ApiResponse> {
+async function handleFakultasJurusan(
+  fakultasName?: string,
+): Promise<ApiResponse> {
   if (USE_MOCK) {
     await delay();
     if (!fakultasName) {
       return createMockErrorResponse(400, "Fakultas parameter is required");
     }
 
-    const fakultas = FAKULTAS_DATA.fakultas.find((f) => f.nama === fakultasName);
+    const fakultas = FAKULTAS_DATA.fakultas.find(
+      (f) => f.nama === fakultasName,
+    );
     if (!fakultas) {
       return createMockErrorResponse(404, "Fakultas not found");
     }
@@ -1368,7 +1442,11 @@ export async function apiHandler(
     if (endpoint === "/payments" && method === "POST") {
       return handleCreatePayment(data, isFormData);
     }
-    if (endpoint.startsWith("/payments/") && endpoint.includes("/approve") && method === "PATCH") {
+    if (
+      endpoint.startsWith("/payments/") &&
+      endpoint.includes("/approve") &&
+      method === "PATCH"
+    ) {
       const id = endpoint.split("/")[2];
       return handleApprovePayment(id, data);
     }
@@ -1385,10 +1463,17 @@ export async function apiHandler(
       const id = endpoint.split("/")[2];
       return handleGetWithdrawal(id);
     }
+    if (endpoint === "/withdrawals/withdraw-all" && method === "POST") {
+      return handleWithdrawAll(data);
+    }
     if (endpoint === "/withdrawals" && method === "POST") {
       return handleCreateWithdrawal(data);
     }
-    if (endpoint.startsWith("/withdrawals/") && endpoint.includes("/approve") && method === "PATCH") {
+    if (
+      endpoint.startsWith("/withdrawals/") &&
+      endpoint.includes("/approve") &&
+      method === "PATCH"
+    ) {
       const id = endpoint.split("/")[2];
       return handleApproveWithdrawal(id, data);
     }
@@ -1442,6 +1527,60 @@ export async function apiHandler(
     }
     if (endpoint === "/fakultas/jurusan") {
       return handleFakultasJurusan(params?.fakultas);
+    }
+
+    // Announcements endpoints — proxy to real backend (no mock data)
+    if (endpoint === "/announcements/active" && method === "GET") {
+      if (USE_MOCK) return createMockResponse([], "No active announcements (mock)");
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/announcements/active`, {
+        method: "GET",
+        headers: createHeaders(token),
+      });
+      const d = await response.json();
+      return wrapBackendResponse(d);
+    }
+    if (endpoint === "/announcements" && method === "GET") {
+      if (USE_MOCK) return createMockResponse([], "No announcements (mock)");
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/announcements`, {
+        method: "GET",
+        headers: createHeaders(token),
+      });
+      const d = await response.json();
+      return wrapBackendResponse(d);
+    }
+    if (endpoint === "/announcements" && method === "POST") {
+      if (USE_MOCK) return createMockResponse({}, "Mock create not supported");
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/announcements`, {
+        method: "POST",
+        headers: createHeaders(token),
+        body: JSON.stringify(data),
+      });
+      const d = await response.json();
+      return wrapBackendResponse(d);
+    }
+    if (endpoint.startsWith("/announcements/") && method === "PATCH") {
+      if (USE_MOCK) return createMockResponse({}, "Mock update not supported");
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: "PATCH",
+        headers: createHeaders(token),
+        body: JSON.stringify(data),
+      });
+      const d = await response.json();
+      return wrapBackendResponse(d);
+    }
+    if (endpoint.startsWith("/announcements/") && method === "DELETE") {
+      if (USE_MOCK) return createMockResponse({}, "Mock delete not supported");
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: "DELETE",
+        headers: createHeaders(token),
+      });
+      const d = await response.json();
+      return wrapBackendResponse(d);
     }
 
     throw new Error(`Unknown endpoint: ${endpoint}`);

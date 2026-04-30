@@ -31,7 +31,7 @@ export async function CampaignVisitors({ className }: { className?: string }) {
           <div
             className={cn(
               "flex items-center gap-1.5",
-              data.performance > 0 ? "text-green" : "text-red",
+              data.performance > 0 ? "text-primary" : "text-red",
             )}
           >
             <TrendingUpIcon

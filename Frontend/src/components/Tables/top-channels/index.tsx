@@ -56,7 +56,7 @@ export async function TopChannels({ className }: { className?: string }) {
 
               <TableCell>{compactFormat(channel.visitors)}</TableCell>
 
-              <TableCell className="!text-right text-green-light-1">
+              <TableCell className="!text-right text-blue-light-1">
                 ${standardFormat(channel.revenues)}
               </TableCell>
 

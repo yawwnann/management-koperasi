@@ -1,4 +1,21 @@
-import { IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  IsEnum,
+  IsOptional,
+} from 'class-validator';
+
+export enum WithdrawalPaymentMethod {
+  CASH = 'Cash',
+  BANK_TRANSFER = 'BankTransfer',
+}
+
+export enum SavingType {
+  POKOK = 'Pokok',
+  WAJIB = 'Wajib',
+  SUKARELA = 'Sukarela',
+}
 
 export class CreateWithdrawalDto {
   @IsNumber()
@@ -8,4 +25,12 @@ export class CreateWithdrawalDto {
   @IsString()
   @IsNotEmpty()
   reason: string;
+
+  @IsEnum(SavingType)
+  @IsNotEmpty()
+  savingType: SavingType;
+
+  @IsEnum(WithdrawalPaymentMethod)
+  @IsOptional()
+  paymentMethod?: WithdrawalPaymentMethod;
 }

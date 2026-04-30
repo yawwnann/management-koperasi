@@ -200,7 +200,8 @@ export class AuthService {
     await this.notificationsService.create({
       type: 'system',
       title: 'Password Berubah',
-      message: 'Password akun Anda telah berhasil diubah. Jika ini bukan tindakan Anda, segera hubungi admin.',
+      message:
+        'Password akun Anda telah berhasil diubah. Jika ini bukan tindakan Anda, segera hubungi admin.',
       userId,
     });
 
@@ -216,6 +217,12 @@ export class AuthService {
         email: true,
         role: true,
         angkatan: true,
+        nim: true,
+        fakultas: true,
+        prodi: true,
+        birthDate: true,
+        address: true,
+        phone: true,
         photo: true,
         isActive: true,
         createdAt: true,

@@ -1,14 +1,13 @@
 import Image from "next/image";
-import logo from "@/assets/logos/logo2.webp";
 
 export function Logo() {
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative h-10 w-10">
+    <div className="mt-4 flex items-center gap-3">
+      <div className="relative w-20 flex-shrink-0">
         <Image
-          src={logo}
-          width={50}
-          height={50}
+          src="/new-logo.PNG"
+          width={64}
+          height={64}
           className="object-contain"
           alt="KOPMA UAD Logo"
           role="presentation"
@@ -16,10 +15,10 @@ export function Logo() {
         />
       </div>
       <div className="flex flex-col">
-        <span className="text-lg font-bold text-dark dark:text-white">
-          KOPMA
+        <span className="text-lg font-bold leading-tight text-dark dark:text-white">
+          KopmaPay
         </span>
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+        <span className="text-sm leading-tight text-gray-500 dark:text-gray-400">
           Koperasi Digital
         </span>
       </div>

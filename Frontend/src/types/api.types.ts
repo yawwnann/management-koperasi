@@ -6,13 +6,14 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'ADMIN' | 'ANGGOTA';
+  role: "ADMIN" | "ANGGOTA";
   angkatan: string;
   nim?: string; // Nomor Induk Mahasiswa
   fakultas?: string; // Fakultas
   prodi?: string; // Program Studi/Jurusan
   birthDate?: string; // Tanggal Lahir (YYYY-MM-DD)
   address?: string; // Alamat
+  phone?: string; // Nomor Handphone
   photo?: string;
   isActive: boolean;
   createdAt: string;
@@ -22,25 +23,27 @@ export interface User {
 export interface CreateUserInput {
   email: string;
   name: string;
-  role?: 'ADMIN' | 'ANGGOTA';
+  role?: "ADMIN" | "ANGGOTA";
   angkatan: string;
   nim?: string;
   fakultas?: string;
   prodi?: string;
   birthDate?: string;
   address?: string;
+  phone?: string;
 }
 
 export interface UpdateUserInput {
   email?: string;
   name?: string;
-  role?: 'ADMIN' | 'ANGGOTA';
+  role?: "ADMIN" | "ANGGOTA";
   angkatan?: string;
   nim?: string;
   fakultas?: string;
   prodi?: string;
   birthDate?: string;
   address?: string;
+  phone?: string;
   isActive?: boolean;
 }
 
@@ -64,13 +67,16 @@ export interface AuthResponse {
   user: User;
 }
 
+export type PaymentMethod = "Cash" | "QRIS" | "Bank Transfer";
+
 export interface Payment {
   id: string;
   userId: string;
   userName: string;
-  amount: number;
+  nominal: number;
   type: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  paymentMethod: PaymentMethod;
+  status: "PENDING" | "APPROVED" | "REJECTED";
   proofUrl?: string;
   approvedBy?: string;
   approvedAt?: string;
@@ -82,10 +88,11 @@ export interface Payment {
 export interface CreatePaymentInput {
   amount: number;
   type: string;
+  paymentMethod: PaymentMethod;
 }
 
 export interface ApprovePaymentInput {
-  status: 'APPROVED' | 'REJECTED';
+  status: "APPROVED" | "REJECTED";
   rejectionReason?: string;
 }
 
@@ -93,8 +100,8 @@ export interface Withdrawal {
   id: string;
   userId: string;
   userName: string;
-  amount: number;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  nominal: number;
+  status: "PENDING" | "APPROVED" | "REJECTED";
   approvedBy?: string;
   approvedAt?: string;
   rejectionReason?: string;
@@ -107,7 +114,7 @@ export interface CreateWithdrawalInput {
 }
 
 export interface ApproveWithdrawalInput {
-  status: 'APPROVED' | 'REJECTED';
+  status: "APPROVED" | "REJECTED";
   rejectionReason?: string;
 }
 
@@ -156,7 +163,7 @@ export interface UserDashboardData {
   approvedWithdrawals: number;
   recentActivities: Array<{
     id: string;
-    type: 'payment' | 'withdrawal';
+    type: "payment" | "withdrawal";
     amount: number;
     status: string;
     createdAt: string;
@@ -185,7 +192,7 @@ export interface AdminDashboardData {
   totalWithdrawals: number;
   recentActivities: Array<{
     id: string;
-    type: 'payment' | 'withdrawal';
+    type: "payment" | "withdrawal";
     userName: string;
     amount: number;
     status: string;
@@ -193,10 +200,10 @@ export interface AdminDashboardData {
   }>;
   recentApprovals: Array<{
     id: string;
-    type: 'payment' | 'withdrawal';
+    type: "payment" | "withdrawal";
     userName: string;
     amount: number;
-    status: 'APPROVED' | 'REJECTED';
+    status: "APPROVED" | "REJECTED";
     approvedAt: string;
   }>;
   recentAlerts: Array<{
@@ -205,7 +212,7 @@ export interface AdminDashboardData {
     message: string;
     detail: string;
     time: string;
-    status: 'pending' | 'success' | 'info';
+    status: "pending" | "success" | "info";
   }>;
   paymentTrend: {
     labels: string[];

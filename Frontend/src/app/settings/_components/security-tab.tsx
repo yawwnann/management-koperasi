@@ -44,8 +44,8 @@ export function SecurityTab() {
       { text: "Sangat Lemah", color: "bg-red-500" },
       { text: "Lemah", color: "bg-orange-500" },
       { text: "Sedang", color: "bg-yellow-500" },
-      { text: "Kuat", color: "bg-green-500" },
-      { text: "Sangat Kuat", color: "bg-green-600" },
+      { text: "Kuat", color: "bg-blue-500" },
+      { text: "Sangat Kuat", color: "bg-blue-600" },
     ];
 
     return { level: score, text: levels[score].text, color: levels[score].color };
@@ -123,7 +123,7 @@ export function SecurityTab() {
       {message && (
         <div className={`flex items-center gap-3 rounded-lg border p-4 ${
           message.type === "success"
-            ? "border-green-300 bg-green-50 text-green-700 dark:border-green-600 dark:bg-green-900/20 dark:text-green-400"
+            ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
             : "border-red-300 bg-red-50 text-red-700 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400"
         }`}>
           {message.type === "success" ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
@@ -242,7 +242,7 @@ export function SecurityTab() {
             {formData.confirmPassword && (
               <p className={`mt-1 text-xs ${
                 formData.newPassword === formData.confirmPassword
-                  ? "text-green-600 dark:text-green-400"
+                  ? "text-blue-600 dark:text-blue-400"
                   : "text-red-600 dark:text-red-400"
               }`}>
                 {formData.newPassword === formData.confirmPassword ? "✓ Password cocok" : "✗ Password tidak cocok"}

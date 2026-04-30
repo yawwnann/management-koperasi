@@ -22,9 +22,22 @@ export class WithdrawalsController {
     return this.withdrawalsService.create(req.user.sub, createWithdrawalDto);
   }
 
+  @Post('withdraw-all')
+  withdrawAll(
+    @Req() req,
+    @Body() body: { reason: string; paymentMethod?: string },
+  ) {
+    return this.withdrawalsService.withdrawAll(
+      req.user.sub,
+      body.reason,
+      body.paymentMethod,
+    );
+  }
+
   @Get()
   findAll(
     @Req() req,
+    @Query('userId') userId?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('status') status?: string,
@@ -32,6 +45,7 @@ export class WithdrawalsController {
     return this.withdrawalsService.findAll(
       req.user.role,
       req.user.sub,
+      userId,
       startDate,
       endDate,
       status,

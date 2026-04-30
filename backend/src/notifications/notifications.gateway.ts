@@ -282,4 +282,34 @@ export class NotificationsGateway
   getConnectedCount() {
     return this.connectedClients.size;
   }
+
+  /**
+   * Broadcast custom notification
+   */
+  broadcastCustomNotification(data: {
+    targetUserId?: string;
+    notification: {
+      id: string;
+      title: string;
+      message: string;
+      actionUrl?: string;
+    };
+  }) {
+    const payload: NotificationPayload = {
+      type: 'system',
+      action: 'created',
+      data: {
+        id: data.notification.id,
+        userName: 'Admin', // System/Admin sender
+        status: 'INFO',
+        message: data.notification.message,
+      },
+    };
+
+    if (data.targetUserId) {
+      this.sendToUser(data.targetUserId, payload);
+    } else {
+      this.sendToAll(payload);
+    }
+  }
 }

@@ -36,11 +36,60 @@ export class WithdrawalsService {
       throw new BadRequestException('Insufficient balance');
     }
 
+    // Get savings breakdown to validate specific saving type balance
+    const approvedPayments = await this.prisma.payment.findMany({
+      where: { userId, status: 'APPROVED' },
+      select: { nominal: true, description: true },
+    });
+
+    const approvedWithdrawals = await this.prisma.withdrawal.findMany({
+      where: { userId, status: 'APPROVED' },
+      select: { nominal: true, savingType: true },
+    });
+
+    // Calculate breakdown by type
+    const breakdown = {
+      Pokok: 0,
+      Wajib: 0,
+      Sukarela: 0,
+    };
+
+    approvedPayments.forEach((payment) => {
+      const desc = (payment.description || '').toLowerCase();
+      const amount = Number(payment.nominal);
+
+      if (desc.includes('pokok')) {
+        breakdown.Pokok += amount;
+      } else if (desc.includes('wajib')) {
+        breakdown.Wajib += amount;
+      } else {
+        breakdown.Sukarela += amount;
+      }
+    });
+
+    // Subtract approved withdrawals by type
+    approvedWithdrawals.forEach((withdrawal) => {
+      const amount = Number(withdrawal.nominal);
+      breakdown[withdrawal.savingType] -= amount;
+    });
+
+    // Validate if user has enough balance for the specific saving type
+    const requestedAmount = createWithdrawalDto.nominal;
+    const availableBalance = breakdown[createWithdrawalDto.savingType];
+
+    if (availableBalance < requestedAmount) {
+      throw new BadRequestException(
+        `Insufficient balance for ${createWithdrawalDto.savingType}. Available: Rp${availableBalance.toLocaleString('id-ID')}`,
+      );
+    }
+
     const withdrawal = await this.prisma.withdrawal.create({
       data: {
         userId,
         nominal: new Prisma.Decimal(createWithdrawalDto.nominal),
         reason: createWithdrawalDto.reason,
+        savingType: createWithdrawalDto.savingType,
+        paymentMethod: (createWithdrawalDto.paymentMethod || 'Cash') as any,
         status: 'PENDING',
       },
       include: {
@@ -92,6 +141,7 @@ export class WithdrawalsService {
   async findAll(
     role: string,
     userId: string,
+    filterUserId?: string,
     startDate?: string,
     endDate?: string,
     status?: string,
@@ -100,7 +150,11 @@ export class WithdrawalsService {
     const where: Prisma.WithdrawalWhereInput = {};
 
     // Add user filter
-    if (role !== 'ADMIN') {
+    // If filterUserId is provided (admin explicitly querying a specific user), use it
+    // Otherwise, if not admin, filter by own userId
+    if (filterUserId) {
+      where.userId = filterUserId;
+    } else if (role !== 'ADMIN') {
       where.userId = userId;
     }
 
@@ -189,9 +243,12 @@ export class WithdrawalsService {
         where: { id: withdrawalId },
         data: {
           status: approveWithdrawalDto.status,
+          ...(approveWithdrawalDto.rejectionReason !== undefined && {
+            rejectionReason: approveWithdrawalDto.rejectionReason,
+          }),
           verifiedBy: adminId,
           verifiedAt: new Date(),
-        },
+        } as any,
         include: {
           user: {
             select: {
@@ -223,7 +280,7 @@ export class WithdrawalsService {
       updatedWithdrawal.userId,
       {
         id: updatedWithdrawal.id,
-        userName: updatedWithdrawal.user.name,
+        userName: withdrawal.user.name,
         amount: Number(updatedWithdrawal.nominal),
         status: updatedWithdrawal.status,
       },
@@ -240,8 +297,8 @@ export class WithdrawalsService {
 
     // Notify User via Email
     this.emailService.sendWithdrawalNotification(
-      updatedWithdrawal.user.email,
-      updatedWithdrawal.user.name,
+      withdrawal.user.email,
+      withdrawal.user.name,
       Number(updatedWithdrawal.nominal),
       updatedWithdrawal.status as 'PENDING' | 'APPROVED' | 'REJECTED',
     );
@@ -269,5 +326,118 @@ export class WithdrawalsService {
     }
 
     return withdrawal;
+  }
+
+  async withdrawAll(userId: string, reason: string, paymentMethod?: string) {
+    // Check user's savings balance
+    const saving = await this.prisma.saving.findUnique({
+      where: { userId },
+    });
+
+    if (!saving || saving.total.equals(0)) {
+      throw new BadRequestException('No balance available to withdraw');
+    }
+
+    // Get savings breakdown (for informational purposes in the reason)
+    const approvedPayments = await this.prisma.payment.findMany({
+      where: { userId, status: 'APPROVED' },
+      select: { nominal: true, description: true },
+    });
+
+    const approvedWithdrawals = await this.prisma.withdrawal.findMany({
+      where: { userId, status: 'APPROVED' },
+      select: { nominal: true, savingType: true },
+    });
+
+    const breakdown = { Pokok: 0, Wajib: 0, Sukarela: 0 };
+
+    approvedPayments.forEach((payment) => {
+      const desc = (payment.description || '').toLowerCase();
+      const amount = Number(payment.nominal);
+      if (desc.includes('pokok')) breakdown.Pokok += amount;
+      else if (desc.includes('wajib')) breakdown.Wajib += amount;
+      else breakdown.Sukarela += amount;
+    });
+
+    approvedWithdrawals.forEach((w) => {
+      const amount = Number(w.nominal);
+      if (breakdown[w.savingType] !== undefined) {
+        breakdown[w.savingType] -= amount;
+      }
+    });
+
+    const totalAmount = Number(saving.total);
+    if (totalAmount <= 0) {
+      throw new BadRequestException('No sufficient balance available to withdraw.');
+    }
+
+    // Build a breakdown summary to include in the reason
+    const breakdownParts: string[] = [];
+    if (breakdown.Pokok > 0)
+      breakdownParts.push(`Pokok: Rp${breakdown.Pokok.toLocaleString('id-ID')}`);
+    if (breakdown.Wajib > 0)
+      breakdownParts.push(`Wajib: Rp${breakdown.Wajib.toLocaleString('id-ID')}`);
+    if (breakdown.Sukarela > 0)
+      breakdownParts.push(`Sukarela: Rp${breakdown.Sukarela.toLocaleString('id-ID')}`);
+
+    const fullReason = breakdownParts.length > 0
+      ? `${reason || 'Lulus / Penarikan Semua'} (${breakdownParts.join(', ')})`
+      : reason || 'Lulus / Penarikan Semua';
+
+    // Determine the dominant saving type (highest balance)
+    const dominantType = (
+      Object.entries(breakdown) as [keyof typeof breakdown, number][]
+    ).reduce((a, b) => (b[1] > a[1] ? b : a), ['Sukarela', 0] as [keyof typeof breakdown, number])[0];
+
+    // Create a single withdrawal record with the full total
+    const withdrawal = await this.prisma.withdrawal.create({
+      data: {
+        userId,
+        nominal: saving.total,
+        reason: fullReason,
+        savingType: dominantType as any,
+        paymentMethod: (paymentMethod || 'Cash') as any,
+        status: 'PENDING',
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+
+    // Notify Admins via WebSocket
+    this.notificationsGateway.broadcastNewWithdrawal({
+      id: withdrawal.id,
+      userId: withdrawal.userId,
+      userName: withdrawal.user.name,
+      amount: Number(withdrawal.nominal),
+      status: withdrawal.status,
+    });
+
+    // Create notification for admins via REST API
+    await this.notificationsService.create({
+      type: 'withdrawal',
+      title: 'Penarikan Semua (Lulus)',
+      message: `${withdrawal.user.name} mengajukan penarikan semua saldo sebesar Rp${Number(withdrawal.nominal).toLocaleString('id-ID')}`,
+      actionUrl: `/admin/verifikasi-penarikan`,
+      isAdminNotification: true,
+    });
+
+    // Notify Admins via Email
+    const admins = await this.prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { email: true },
+    });
+
+    for (const admin of admins) {
+      this.emailService.sendAdminWithdrawalNotification(
+        admin.email,
+        withdrawal.user.name,
+        Number(withdrawal.nominal),
+      );
+    }
+
+    return { success: true, withdrawals: [withdrawal] };
   }
 }

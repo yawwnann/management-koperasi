@@ -20,6 +20,7 @@ import { EmailModule } from './email/email.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { FakultasModule } from './fakultas/fakultas.module';
+import { AnnouncementsModule } from './announcements/announcements.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { FakultasModule } from './fakultas/fakultas.module';
     NotificationsModule,
     DashboardModule,
     FakultasModule,
+    AnnouncementsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

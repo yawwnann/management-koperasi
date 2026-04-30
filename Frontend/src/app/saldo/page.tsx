@@ -100,7 +100,7 @@ function SaldoContent() {
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; className: string }> = {
-      APPROVED: { label: "Disetujui", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
+      APPROVED: { label: "Disetujui", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
       PENDING: { label: "Menunggu", className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" },
       REJECTED: { label: "Ditolak", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
     };
@@ -284,7 +284,7 @@ function SaldoContent() {
                   <div className="flex items-center gap-3">
                     <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
                       tx.type === "payment"
-                        ? "bg-green-100 text-green-600 dark:bg-green-900/30"
+                        ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30"
                         : "bg-red-100 text-red-600 dark:bg-red-900/30"
                     }`}>
                       {tx.type === "payment" ? (
@@ -306,7 +306,7 @@ function SaldoContent() {
                     <p className={`text-sm font-semibold ${
                       tx.type === "withdrawal"
                         ? "text-red-600 dark:text-red-400"
-                        : "text-green-600 dark:text-green-400"
+                        : "text-blue-600 dark:text-blue-400"
                     }`}>
                       {tx.type === "withdrawal" ? "-" : "+"}{formatCurrency(tx.amount)}
                     </p>

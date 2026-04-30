@@ -1,5 +1,5 @@
 "use client";
-import { EmailIcon, PasswordIcon } from "@/assets/icons";
+import { EmailIcon } from "@/assets/icons";
 import React, { useState } from "react";
 import InputGroup from "../FormElements/InputGroup";
 import { Checkbox } from "../FormElements/checkbox";
@@ -37,11 +37,11 @@ export default function SigninWithPassword() {
         router.push("/");
         router.refresh();
       } else {
-        setError("Email atau password salah. Silakan coba lagi.");
+        setError("Email atau kata sandi salah. Silakan coba lagi.");
       }
     } catch (err) {
       setError("Terjadi kesalahan. Silakan coba lagi nanti.");
-      console.error("Login error:", err);
+      console.error("Kesalahan saat masuk:", err);
     } finally {
       setLoading(false);
     }
@@ -73,13 +73,13 @@ export default function SigninWithPassword() {
       {/* Password Input with Eye Toggle */}
       <div className="mb-4">
         <label className="text-body-sm font-medium text-dark dark:text-white">
-          Password
+          Kata Sandi
         </label>
         <div className="relative mt-3">
           <input
             type={showPassword ? "text" : "password"}
             name="password"
-            placeholder="Password"
+            placeholder="Masukkan kata sandi"
             onChange={handleChange}
             value={data.password}
             className="w-full rounded-lg border-[1.5px] border-stroke bg-transparent px-5.5 py-3 pr-12 outline-none transition focus:border-primary disabled:cursor-default disabled:bg-gray-2 data-[active=true]:border-primary dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary dark:disabled:bg-dark dark:data-[active=true]:border-primary"
@@ -133,7 +133,7 @@ export default function SigninWithPassword() {
       {/* Remember Me & Forgot Password */}
       <div className="mb-6 flex items-center justify-between">
         <Checkbox
-          label="Remember me"
+          label="Ingat saya"
           name="remember"
           withIcon="check"
           minimal
@@ -150,7 +150,7 @@ export default function SigninWithPassword() {
           href="/auth/forgot-password"
           className="text-sm font-medium text-primary hover:underline"
         >
-          Forgot Password?
+          Lupa kata sandi?
         </a>
       </div>
 
@@ -167,7 +167,7 @@ export default function SigninWithPassword() {
             <span>Memproses...</span>
           </>
         ) : (
-          "Log in"
+          "Masuk"
         )}
       </button>
     </form>

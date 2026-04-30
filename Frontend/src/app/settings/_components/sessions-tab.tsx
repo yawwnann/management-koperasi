@@ -51,7 +51,7 @@ export function SessionsTab() {
 
   const getStatusColor = (status: string) => {
     return status === "SUCCESS"
-      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+      ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
       : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
   };
 
@@ -121,7 +121,7 @@ export function SessionsTab() {
                       </p>
                       <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(session.status)}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${
-                          session.status === "SUCCESS" ? "bg-green-500" : "bg-red-500"
+                          session.status === "SUCCESS" ? "bg-blue-500" : "bg-red-500"
                         }`} />
                         {session.status === "SUCCESS" ? "Berhasil" : "Gagal"}
                       </span>

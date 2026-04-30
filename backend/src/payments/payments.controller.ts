@@ -69,6 +69,7 @@ export class PaymentsController {
   @Get()
   findAll(
     @Req() req: JwtRequest,
+    @Query('userId') userId?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('status') status?: string,
@@ -76,6 +77,7 @@ export class PaymentsController {
     return this.paymentsService.findAll(
       req.user.role,
       req.user.sub,
+      userId,
       startDate,
       endDate,
       status,

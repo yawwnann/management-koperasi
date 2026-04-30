@@ -93,7 +93,7 @@ export class DashboardService {
 
     const approvedPaymentsAll = await this.prisma.payment.findMany({
       where: { userId, status: 'APPROVED' },
-      select: { nominal: true, description: true },
+      select: { nominal: true, description: true, createdAt: true },
     });
 
     approvedPaymentsAll.forEach((payment) => {
@@ -174,6 +174,31 @@ export class DashboardService {
       }
     });
 
+    // Calculate Pemutihan Alert (5 months unpaid wajib)
+    let pemutihanAlert = { status: false, monthsUnpaid: 0 };
+    const wajibPayments = approvedPaymentsAll.filter((p) =>
+      (p.description || '').toLowerCase().includes('wajib'),
+    );
+    const latestWajib = wajibPayments.sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )[0];
+
+    const referenceDate = latestWajib
+      ? new Date(latestWajib.createdAt)
+      : user?.createdAt
+        ? new Date(user.createdAt)
+        : new Date();
+
+    const diffTime = Math.abs(new Date().getTime() - referenceDate.getTime());
+    const diffMonths = diffTime / (1000 * 60 * 60 * 24 * 30); // Approximate months
+    
+    if (diffMonths >= 5) {
+      pemutihanAlert = {
+        status: true,
+        monthsUnpaid: Math.floor(diffMonths),
+      };
+    }
+
     return {
       user: {
         name: user?.name,
@@ -194,6 +219,7 @@ export class DashboardService {
         payments: paymentsByMonth,
         withdrawals: withdrawalsByMonth,
       },
+      pemutihanAlert,
     };
   }
 

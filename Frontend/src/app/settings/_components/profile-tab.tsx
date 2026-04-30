@@ -1,8 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Camera, User, Mail, Phone, MapPin, Save, Check, X } from "lucide-react";
+import {
+  Camera,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Save,
+  Check,
+  X,
+} from "lucide-react";
 import { getCurrentUser } from "@/lib/api-helpers";
+import { profileApi } from "@/lib/api";
 
 export function ProfileTab() {
   const [user, setUser] = useState<any>(null);
@@ -15,7 +25,10 @@ export function ProfileTab() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     const currentUser = getCurrentUser();
@@ -32,7 +45,9 @@ export function ProfileTab() {
     setLoading(false);
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -42,9 +57,37 @@ export function ProfileTab() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // TODO: Implement profile update API call
-      setMessage({ type: "success", text: "Profil berhasil diperbarui." });
-      setTimeout(() => setMessage(null), 3000);
+      const response = await profileApi.updateProfile({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+      });
+
+      if (response.success) {
+        // Update localStorage agar data terbaru langsung tersimpan
+        if (typeof window !== "undefined") {
+          const currentUser = JSON.parse(
+            localStorage.getItem("current_user") || "{}",
+          );
+          const updatedUser = {
+            ...currentUser,
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            address: formData.address,
+          };
+          localStorage.setItem("current_user", JSON.stringify(updatedUser));
+          setUser(updatedUser);
+        }
+        setMessage({ type: "success", text: "Profil berhasil diperbarui." });
+        setTimeout(() => setMessage(null), 3000);
+      } else {
+        setMessage({
+          type: "error",
+          text: response.message || "Gagal memperbarui profil.",
+        });
+      }
     } catch (error) {
       setMessage({ type: "error", text: "Gagal memperbarui profil." });
     } finally {
@@ -67,14 +110,23 @@ export function ProfileTab() {
     <div className="space-y-6">
       {/* Message */}
       {message && (
-        <div className={`flex items-center gap-3 rounded-lg border p-4 ${
-          message.type === "success"
-            ? "border-green-300 bg-green-50 text-green-700 dark:border-green-600 dark:bg-green-900/20 dark:text-green-400"
-            : "border-red-300 bg-red-50 text-red-700 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400"
-        }`}>
-          {message.type === "success" ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+        <div
+          className={`flex items-center gap-3 rounded-lg border p-4 ${
+            message.type === "success"
+              ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
+              : "border-red-300 bg-red-50 text-red-700 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400"
+          }`}
+        >
+          {message.type === "success" ? (
+            <Check className="h-4 w-4" />
+          ) : (
+            <X className="h-4 w-4" />
+          )}
           <span className="text-sm font-medium">{message.text}</span>
-          <button onClick={() => setMessage(null)} className="ml-auto text-current opacity-60 hover:opacity-100">
+          <button
+            onClick={() => setMessage(null)}
+            className="ml-auto text-current opacity-60 hover:opacity-100"
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -87,7 +139,11 @@ export function ProfileTab() {
           <div className="relative">
             <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-primary/10">
               {user?.photo ? (
-                <img src={user.photo} alt={user.name} className="h-full w-full object-cover" />
+                <img
+                  src={user.photo}
+                  alt={user.name}
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 <User className="h-10 w-10 text-primary" />
               )}
@@ -97,13 +153,19 @@ export function ProfileTab() {
             </button>
           </div>
           <div>
-            <h3 className="text-xl font-bold text-dark dark:text-white">{user?.name}</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{user?.email}</p>
-            <span className={`mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              user?.role === "ADMIN"
-                ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-            }`}>
+            <h3 className="text-xl font-bold text-dark dark:text-white">
+              {user?.name}
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {user?.email}
+            </p>
+            <span
+              className={`mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                user?.role === "ADMIN"
+                  ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                  : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+              }`}
+            >
               {user?.role === "ADMIN" ? "Administrator" : "Anggota"}
             </span>
           </div>

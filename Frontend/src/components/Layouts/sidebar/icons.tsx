@@ -5,6 +5,7 @@ export {
   ChevronUp,
   Home as HomeIcon,
   Calendar,
+  Settings,
   User,
   BookText as Alphabet,
   Table,
@@ -18,4 +19,5 @@ export {
   Users as UsersGroup,
   CheckCircle,
   FileText as Report,
+  Bell as BellIcon,
 } from "lucide-react";

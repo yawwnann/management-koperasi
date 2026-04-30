@@ -8,7 +8,7 @@ const menuItemBaseStyles = cva(
   {
     variants: {
       isActive: {
-        true: "bg-[rgba(34,173,92,0.07)] text-primary hover:bg-[rgba(34,173,92,0.07)] dark:bg-[#FFFFFF1A] dark:text-white",
+        true: "bg-[rgba(60,80,224,0.07)] text-primary hover:bg-[rgba(60,80,224,0.07)] dark:bg-[#FFFFFF1A] dark:text-white",
         false:
           "hover:bg-gray-100 hover:text-dark hover:dark:bg-[#FFFFFF1A] hover:dark:text-white",
       },

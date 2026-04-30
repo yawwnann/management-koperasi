@@ -83,6 +83,13 @@ export const NAV_DATA = [
         url: "/admin/laporan",
         items: [],
       },
+      {
+        title: "Pengumuman",
+        icon: Icons.BellIcon,
+        roles: ["ADMIN"],
+        url: "/admin/pengumuman",
+        items: [],
+      },
       // Common menus
       {
         title: "Profile",
@@ -94,7 +101,7 @@ export const NAV_DATA = [
       {
         title: "Settings",
         url: "/settings",
-        icon: Icons.FourCircle,
+        icon: Icons.Settings,
         roles: ["ADMIN", "ANGGOTA"],
         items: [],
       },

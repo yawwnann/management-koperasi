@@ -42,9 +42,9 @@ export const ANGGOTA_PROFILE: UserProfile = {
   email: "ahmad@kopma.com",
   role: "ANGGOTA",
   angkatan: "2021",
-  profilePhoto: "https://placehold.co/png/200x200/10b981/ffffff?text=AS",
+  profilePhoto: "https://placehold.co/png/200x200/3c50e0/ffffff?text=AS",
   coverPhoto:
-    "https://placehold.co/png/970x260/10b981/ffffff?text=Cover+Photo",
+    "https://placehold.co/png/970x260/3c50e0/ffffff?text=Cover+Photo",
   bio: "Anggota KOPMA Angkatan 2021. Aktif dalam kegiatan simpan pinjam koperasi.",
   phone: "+62 813-4567-8901",
   address: "Bandung, Indonesia",

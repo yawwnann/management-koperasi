@@ -31,6 +31,7 @@ export class PaymentsService {
         nominal: new Prisma.Decimal(createPaymentDto.nominal),
         proofImage,
         description: createPaymentDto.description,
+        paymentMethod: createPaymentDto.paymentMethod as any,
         status: 'PENDING',
       },
       include: {
@@ -82,6 +83,7 @@ export class PaymentsService {
   async findAll(
     role: string,
     userId: string,
+    filterUserId?: string,
     startDate?: string,
     endDate?: string,
     status?: string,
@@ -90,7 +92,11 @@ export class PaymentsService {
     const where: Prisma.PaymentWhereInput = {};
 
     // Add user filter
-    if (role !== 'ADMIN') {
+    // If filterUserId is provided (admin explicitly querying a specific user), use it
+    // Otherwise, if not admin, filter by own userId
+    if (filterUserId) {
+      where.userId = filterUserId;
+    } else if (role !== 'ADMIN') {
       where.userId = userId;
     }
 

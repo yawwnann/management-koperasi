@@ -20,7 +20,10 @@ function RiwayatPenarikanContent() {
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [page, setPage] = useState(1);
   const [showDetail, setShowDetail] = useState(false);
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<any>(null);
@@ -71,22 +74,44 @@ function RiwayatPenarikanContent() {
     setSelectedWithdrawal(null);
   };
 
-  const filteredWithdrawals = statusFilter === "ALL"
-    ? withdrawals
-    : withdrawals.filter((w) => w.status === statusFilter);
+  const filteredWithdrawals =
+    statusFilter === "ALL"
+      ? withdrawals
+      : withdrawals.filter((w) => w.status === statusFilter);
 
   const totalPages = Math.ceil(filteredWithdrawals.length / itemsPerPage);
-  const paginatedWithdrawals = filteredWithdrawals.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const paginatedWithdrawals = filteredWithdrawals.slice(
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage,
+  );
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { label: string; className: string }> = {
-      APPROVED: { label: "Disetujui", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
-      PENDING: { label: "Menunggu", className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" },
-      REJECTED: { label: "Ditolak", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
+      APPROVED: {
+        label: "Disetujui",
+        className:
+          "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+      },
+      PENDING: {
+        label: "Menunggu",
+        className:
+          "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+      },
+      REJECTED: {
+        label: "Ditolak",
+        className:
+          "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+      },
     };
-    const config = statusMap[status] || { label: status, className: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300" };
+    const config = statusMap[status] || {
+      label: status,
+      className:
+        "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
+    };
     return (
-      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${config.className}`}>
+      <span
+        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${config.className}`}
+      >
         {config.label}
       </span>
     );
@@ -101,7 +126,7 @@ function RiwayatPenarikanContent() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl">
+    <div className="mx-auto">
       {/* Header Section */}
       <div className="mb-6">
         <Breadcrumb pageName="Riwayat Penarikan" />
@@ -112,7 +137,7 @@ function RiwayatPenarikanContent() {
         <div
           className={`mb-6 rounded-lg border p-4 ${
             message.type === "success"
-              ? "border-green-300 bg-green-50 text-green-700 dark:border-green-600 dark:bg-green-900/20 dark:text-green-400"
+              ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
               : "border-red-300 bg-red-50 text-red-700 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400"
           }`}
         >
@@ -126,12 +151,26 @@ function RiwayatPenarikanContent() {
         <div className="rounded-xl border border-stroke bg-white p-5 shadow-sm dark:border-strokedark dark:bg-boxdark">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Penarikan</p>
-              <p className="mt-1 text-3xl font-bold text-primary">{withdrawals.length}</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Total Penarikan
+              </p>
+              <p className="mt-1 text-3xl font-bold text-primary">
+                {withdrawals.length}
+              </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-primary dark:bg-blue-900/30">
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                />
               </svg>
             </div>
           </div>
@@ -141,14 +180,26 @@ function RiwayatPenarikanContent() {
         <div className="rounded-xl border border-stroke bg-white p-5 shadow-sm dark:border-strokedark dark:bg-boxdark">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Menunggu Verifikasi</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Menunggu Verifikasi
+              </p>
               <p className="mt-1 text-3xl font-bold text-yellow-600 dark:text-yellow-400">
                 {withdrawals.filter((w) => w.status === "PENDING").length}
               </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30">
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             </div>
           </div>
@@ -158,14 +209,26 @@ function RiwayatPenarikanContent() {
         <div className="rounded-xl border border-stroke bg-white p-5 shadow-sm dark:border-strokedark dark:bg-boxdark">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Disetujui</p>
-              <p className="mt-1 text-3xl font-bold text-green-600 dark:text-green-400">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Disetujui
+              </p>
+              <p className="mt-1 text-3xl font-bold text-blue-600 dark:text-blue-400">
                 {withdrawals.filter((w) => w.status === "APPROVED").length}
               </p>
             </div>
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100 text-green-600 dark:bg-green-900/30">
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30">
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             </div>
           </div>
@@ -175,14 +238,26 @@ function RiwayatPenarikanContent() {
         <div className="rounded-xl border border-stroke bg-white p-5 shadow-sm dark:border-strokedark dark:bg-boxdark">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Ditolak</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Ditolak
+              </p>
               <p className="mt-1 text-3xl font-bold text-red-600 dark:text-red-400">
                 {withdrawals.filter((w) => w.status === "REJECTED").length}
               </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-100 text-red-600 dark:bg-red-900/30">
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
             </div>
           </div>
@@ -202,7 +277,10 @@ function RiwayatPenarikanContent() {
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
               }`}
             >
-              Semua <span className="ml-1 text-xs opacity-75">{withdrawals.length}</span>
+              Semua{" "}
+              <span className="ml-1 text-xs opacity-75">
+                {withdrawals.length}
+              </span>
             </button>
             <button
               onClick={() => setStatusFilter("PENDING")}
@@ -212,17 +290,23 @@ function RiwayatPenarikanContent() {
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
               }`}
             >
-              Menunggu <span className="ml-1 text-xs opacity-75">{withdrawals.filter((w) => w.status === "PENDING").length}</span>
+              Menunggu{" "}
+              <span className="ml-1 text-xs opacity-75">
+                {withdrawals.filter((w) => w.status === "PENDING").length}
+              </span>
             </button>
             <button
               onClick={() => setStatusFilter("APPROVED")}
               className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
                 statusFilter === "APPROVED"
-                  ? "bg-green-500 text-white"
+                  ? "bg-blue-500 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
               }`}
             >
-              Disetujui <span className="ml-1 text-xs opacity-75">{withdrawals.filter((w) => w.status === "APPROVED").length}</span>
+              Disetujui{" "}
+              <span className="ml-1 text-xs opacity-75">
+                {withdrawals.filter((w) => w.status === "APPROVED").length}
+              </span>
             </button>
             <button
               onClick={() => setStatusFilter("REJECTED")}
@@ -232,7 +316,10 @@ function RiwayatPenarikanContent() {
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
               }`}
             >
-              Ditolak <span className="ml-1 text-xs opacity-75">{withdrawals.filter((w) => w.status === "REJECTED").length}</span>
+              Ditolak{" "}
+              <span className="ml-1 text-xs opacity-75">
+                {withdrawals.filter((w) => w.status === "REJECTED").length}
+              </span>
             </button>
           </div>
         </div>
@@ -244,6 +331,9 @@ function RiwayatPenarikanContent() {
               <tr className="border-b border-stroke bg-gray-50 dark:border-strokedark dark:bg-gray-800">
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   Jumlah
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Jenis
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   Alasan
@@ -262,52 +352,110 @@ function RiwayatPenarikanContent() {
             <tbody className="divide-y divide-stroke dark:divide-strokedark">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center">
+                  <td colSpan={6} className="px-4 py-12 text-center">
                     <div className="flex items-center justify-center">
-                      <svg className="mr-2 h-5 w-5 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <svg
+                        className="mr-2 h-5 w-5 animate-spin text-primary"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
                       </svg>
-                      <span className="text-gray-500 dark:text-gray-400">Memuat data...</span>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        Memuat data...
+                      </span>
                     </div>
                   </td>
                 </tr>
               ) : filteredWithdrawals.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center">
+                  <td colSpan={6} className="px-4 py-12 text-center">
                     <div className="flex flex-col items-center">
-                      <svg className="mb-3 h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                      <svg
+                        className="mb-3 h-12 w-12 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1.5}
+                          d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                        />
                       </svg>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Tidak ada data penarikan</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Tidak ada data penarikan
+                      </p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 paginatedWithdrawals.map((withdrawal) => (
-                  <tr key={withdrawal.id} className="transition hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                  <tr
+                    key={withdrawal.id}
+                    className="transition hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  >
                     <td className="px-4 py-4">
-                      <p className="font-semibold text-dark dark:text-white">{formatCurrency(withdrawal.amount)}</p>
+                      <p className="font-semibold text-dark dark:text-white">
+                        {formatCurrency(withdrawal.amount)}
+                      </p>
                     </td>
                     <td className="px-4 py-4">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{withdrawal.reason}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {withdrawal.savingType}
+                      </p>
                     </td>
                     <td className="px-4 py-4">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{formatDate(withdrawal.createdAt)}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {withdrawal.reason}
+                      </p>
+                    </td>
+                    <td className="px-4 py-4">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {formatDate(withdrawal.createdAt)}
+                      </p>
                     </td>
                     <td className="px-4 py-4">
                       {getStatusBadge(withdrawal.status)}
                     </td>
                     <td className="px-4 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button 
+                        <button
                           onClick={() => handleViewDetail(withdrawal)}
                           className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-primary dark:hover:bg-gray-700 dark:hover:text-primary"
                           title="Lihat Detail"
                         >
-                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
                           </svg>
                         </button>
                       </div>
@@ -323,7 +471,9 @@ function RiwayatPenarikanContent() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between border-t border-stroke px-4 py-3 dark:border-strokedark">
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Menampilkan {(page - 1) * itemsPerPage + 1} - {Math.min(page * itemsPerPage, filteredWithdrawals.length)} dari {filteredWithdrawals.length} data
+              Menampilkan {(page - 1) * itemsPerPage + 1} -{" "}
+              {Math.min(page * itemsPerPage, filteredWithdrawals.length)} dari{" "}
+              {filteredWithdrawals.length} data
             </p>
             <div className="flex gap-2">
               <button
@@ -364,13 +514,25 @@ function RiwayatPenarikanContent() {
           <div className="w-full max-w-2xl rounded-2xl border border-stroke bg-white shadow-xl dark:border-strokedark dark:bg-boxdark">
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-stroke px-6 py-4 dark:border-strokedark">
-              <h3 className="text-lg font-semibold text-dark dark:text-white">Detail Penarikan</h3>
+              <h3 className="text-lg font-semibold text-dark dark:text-white">
+                Detail Penarikan
+              </h3>
               <button
                 onClick={handleCloseDetail}
                 className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-dark dark:hover:bg-gray-700 dark:hover:text-white"
               >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -381,37 +543,70 @@ function RiwayatPenarikanContent() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Jumlah Penarikan</p>
-                    <p className="mt-1 text-lg font-bold text-primary">{formatCurrency(selectedWithdrawal.amount)}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Jumlah Penarikan
+                    </p>
+                    <p className="mt-1 text-lg font-bold text-primary">
+                      {formatCurrency(selectedWithdrawal.amount)}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
-                    <div className="mt-1">{getStatusBadge(selectedWithdrawal.status)}</div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Status
+                    </p>
+                    <div className="mt-1">
+                      {getStatusBadge(selectedWithdrawal.status)}
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Alasan Penarikan</p>
-                  <p className="mt-1 font-medium text-dark dark:text-white">{selectedWithdrawal.reason}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Jenis Simpanan
+                  </p>
+                  <p className="mt-1 font-medium text-dark dark:text-white">
+                    Simpanan {selectedWithdrawal.savingType}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Alasan Penarikan
+                  </p>
+                  <p className="mt-1 font-medium text-dark dark:text-white">
+                    {selectedWithdrawal.reason}
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Tanggal Request</p>
-                    <p className="mt-1 font-medium text-dark dark:text-white">{formatDate(selectedWithdrawal.createdAt)}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Tanggal Request
+                    </p>
+                    <p className="mt-1 font-medium text-dark dark:text-white">
+                      {formatDate(selectedWithdrawal.createdAt)}
+                    </p>
                   </div>
                   {selectedWithdrawal.verifiedAt && (
                     <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Tanggal Verifikasi</p>
-                      <p className="mt-1 font-medium text-dark dark:text-white">{formatDate(selectedWithdrawal.verifiedAt)}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Tanggal Verifikasi
+                      </p>
+                      <p className="mt-1 font-medium text-dark dark:text-white">
+                        {formatDate(selectedWithdrawal.verifiedAt)}
+                      </p>
                     </div>
                   )}
                 </div>
 
                 {selectedWithdrawal.user && (
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Nama Anggota</p>
-                    <p className="mt-1 font-medium text-dark dark:text-white">{selectedWithdrawal.user.name}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Nama Anggota
+                    </p>
+                    <p className="mt-1 font-medium text-dark dark:text-white">
+                      {selectedWithdrawal.user.name}
+                    </p>
                   </div>
                 )}
               </div>

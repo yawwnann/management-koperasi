@@ -59,7 +59,7 @@ export async function TopProducts() {
 
               <TableCell>{product.sold}</TableCell>
 
-              <TableCell className="pr-5 text-right text-green-light-1 sm:pr-6 xl:pr-7.5">
+              <TableCell className="pr-5 text-right text-blue-light-1 sm:pr-6 xl:pr-7.5">
                 ${product.profit}
               </TableCell>
             </TableRow>

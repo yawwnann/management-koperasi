@@ -2,6 +2,7 @@
 
 import { Header } from "@/components/Layouts/header";
 import { Sidebar } from "@/components/Layouts/sidebar";
+import { AnnouncementPopup } from "@/components/AnnouncementPopup";
 import type { PropsWithChildren } from "react";
 import { usePathname } from "next/navigation";
 
@@ -28,6 +29,9 @@ export function AppShell({ children }: PropsWithChildren) {
           {children}
         </main>
       </div>
+
+      {/* Global popup — muncul saat ada pengumuman aktif setelah login */}
+      <AnnouncementPopup />
     </div>
   );
 }

@@ -47,6 +47,8 @@ pnpm-debug.log*
 # vercel
 .vercel
 
+.kiro
+
 # typescript
 *.tsbuildinfo
 Frontend/next-env.d.ts

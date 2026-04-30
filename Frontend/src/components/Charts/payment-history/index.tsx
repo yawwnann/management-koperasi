@@ -23,7 +23,7 @@ export function PaymentHistoryChart({ data }: PaymentHistoryChartProps) {
         show: false,
       },
     },
-    colors: ["#22AD5C"],
+    colors: ["#3C50E0"],
     series: [
       {
         name: "Pembayaran",

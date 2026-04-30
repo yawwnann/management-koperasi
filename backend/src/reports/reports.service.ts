@@ -1,6 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+type AngkatanMember = {
+  id: string;
+  name: string;
+  email: string;
+  savings: number;
+};
+
+type AngkatanReport = {
+  angkatan: string;
+  totalMembers: number;
+  totalSavings: number;
+  totalPayments: number;
+  totalWithdrawals: number;
+  members: AngkatanMember[];
+};
+
 @Injectable()
 export class ReportsService {
   constructor(private prisma: PrismaService) {}
@@ -105,22 +121,25 @@ export class ReportsService {
     });
 
     // Group by angkatan
-    const angkatanMap = new Map();
+    const angkatanMap = new Map<string, AngkatanReport>();
 
     users.forEach((user) => {
       const ang = user.angkatan || 'Unknown';
-      if (!angkatanMap.has(ang)) {
-        angkatanMap.set(ang, {
+      let angkatanData = angkatanMap.get(ang);
+
+      if (!angkatanData) {
+        angkatanData = {
           angkatan: ang,
           totalMembers: 0,
           totalSavings: 0,
           totalPayments: 0,
           totalWithdrawals: 0,
           members: [],
-        });
+        };
+
+        angkatanMap.set(ang, angkatanData);
       }
 
-      const angkatanData = angkatanMap.get(ang);
       angkatanData.totalMembers++;
       angkatanData.totalSavings += user.savings
         ? Number(user.savings.total)
@@ -141,7 +160,7 @@ export class ReportsService {
       });
     });
 
-    const reports = Array.from(angkatanMap.values());
+    const reports: AngkatanReport[] = Array.from(angkatanMap.values());
 
     return angkatan ? reports[0] || null : reports;
   }

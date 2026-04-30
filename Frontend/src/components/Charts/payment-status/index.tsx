@@ -23,7 +23,7 @@ export function PaymentStatusChart({ data }: PaymentStatusChartProps) {
       type: "donut",
       fontFamily: "Satoshi, sans-serif",
     },
-    colors: ["#22AD5C", "#F59E0B", "#EF4444"],
+    colors: ["#3C50E0", "#F59E0B", "#EF4444"],
     series: [data.approved, data.pending, data.rejected],
     labels: ["Disetujui", "Menunggu", "Ditolak"],
     plotOptions: {

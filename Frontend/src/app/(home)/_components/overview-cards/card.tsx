@@ -30,7 +30,7 @@ export function OverviewCard({ label, data, Icon }: PropsType) {
         <dl
           className={cn(
             "text-sm font-medium",
-            isDecreasing ? "text-red" : "text-green",
+            isDecreasing ? "text-red" : "text-primary",
           )}
         >
           <dt className="flex items-center gap-1.5">

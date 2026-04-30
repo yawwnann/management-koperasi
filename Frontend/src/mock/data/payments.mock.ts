@@ -21,8 +21,9 @@ export let MOCK_PAYMENTS: Payment[] = [
     id: "payment-1",
     userId: "user-2",
     userName: "Anggota KOPMA",
-    amount: 500000,
+    nominal: 500000,
     type: "Simpanan Pokok",
+    paymentMethod: "Bank Transfer",
     status: "APPROVED",
     proofUrl: "/mock/proof-payment-1.jpg",
     approvedBy: "user-1",
@@ -34,8 +35,9 @@ export let MOCK_PAYMENTS: Payment[] = [
     id: "payment-2",
     userId: "user-3",
     userName: "Budi Santoso",
-    amount: 1000000,
+    nominal: 1000000,
     type: "Simpanan Wajib",
+    paymentMethod: "QRIS",
     status: "APPROVED",
     proofUrl: "/mock/proof-payment-2.jpg",
     approvedBy: "user-1",
@@ -47,8 +49,9 @@ export let MOCK_PAYMENTS: Payment[] = [
     id: "payment-3",
     userId: "user-4",
     userName: "Siti Rahma",
-    amount: 750000,
+    nominal: 750000,
     type: "Simpanan Sukarela",
+    paymentMethod: "Cash",
     status: "PENDING",
     proofUrl: "/mock/proof-payment-3.jpg",
     createdAt: monthsAgoISO(3, 17, 14),
@@ -58,8 +61,9 @@ export let MOCK_PAYMENTS: Payment[] = [
     id: "payment-4",
     userId: "user-5",
     userName: "Ahmad Fauzi",
-    amount: 2000000,
+    nominal: 2000000,
     type: "Simpanan Pokok",
+    paymentMethod: "Bank Transfer",
     status: "PENDING",
     proofUrl: "/mock/proof-payment-4.jpg",
     createdAt: monthsAgoISO(2, 18, 10),
@@ -69,8 +73,9 @@ export let MOCK_PAYMENTS: Payment[] = [
     id: "payment-5",
     userId: "user-2",
     userName: "Anggota KOPMA",
-    amount: 300000,
+    nominal: 300000,
     type: "Simpanan Wajib",
+    paymentMethod: "QRIS",
     status: "REJECTED",
     proofUrl: "/mock/proof-payment-5.jpg",
     approvedBy: "user-1",
@@ -82,14 +87,18 @@ export let MOCK_PAYMENTS: Payment[] = [
 ];
 
 /**
- * Get all payments (filtered by user if ANGGOTA)
+ * Get all payments (filtered by user if userId is provided)
  */
 export function getPaymentsList(
   queryParams?: Record<string, string>,
 ): Payment[] {
-  // In real app, filter by user role
-  // For mock, return all
-  return MOCK_PAYMENTS;
+  let payments = MOCK_PAYMENTS;
+
+  if (queryParams?.userId) {
+    payments = payments.filter((p) => p.userId === queryParams.userId);
+  }
+
+  return payments;
 }
 
 /**
@@ -109,8 +118,9 @@ export function createPayment(
     id: `payment-${Date.now()}`,
     userId: input.userId || "user-2",
     userName: input.userName || "Anggota KOPMA",
-    amount: input.amount,
+    nominal: input.amount,
     type: input.type,
+    paymentMethod: input.paymentMethod,
     status: "PENDING",
     proofUrl: "/mock/proof-new-payment.jpg",
     createdAt: new Date().toISOString(),

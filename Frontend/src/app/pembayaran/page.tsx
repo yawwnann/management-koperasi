@@ -4,13 +4,23 @@ import React, { useState, useCallback } from "react";
 import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import { ProtectedRoute } from "@/components/protected-route";
 import { paymentsApi } from "@/lib/api";
+import {
+  PaymentMethodSelector,
+  PaymentMethod,
+} from "@/components/PaymentMethodSelector";
+import { PaymentMethodInfo } from "@/components/PaymentMethodInfo";
 
-type PaymentType = "" | "Simpanan Pokok" | "Simpanan Wajib" | "Simpanan Sukarela";
+type PaymentType =
+  | ""
+  | "Simpanan Pokok"
+  | "Simpanan Wajib"
+  | "Simpanan Sukarela";
 
 interface FormState {
   paymentType: PaymentType;
   amount: string;
   proofFile: File | null;
+  paymentMethod: PaymentMethod | null;
 }
 
 export default function PembayaranPage() {
@@ -26,9 +36,13 @@ function PembayaranContent() {
     paymentType: "",
     amount: "",
     proofFile: null,
+    paymentMethod: null,
   });
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const formatRupiah = (value: string): string => {
@@ -45,11 +59,14 @@ function PembayaranContent() {
     const file = e.target.files?.[0] || null;
     if (file) {
       if (!file.type.startsWith("image/")) {
-        setMessage({ type: "error", text: "File harus berupa gambar (JPG, PNG, dll)." });
+        setMessage({
+          type: "error",
+          text: "File harus berupa gambar (JPG, PNG, dll).",
+        });
         return;
       }
-      if (file.size > 5 * 1024 * 1024) {
-        setMessage({ type: "error", text: "Ukuran file maksimal 5MB." });
+      if (file.size > 1 * 1024 * 1024) {
+        setMessage({ type: "error", text: "Ukuran file maksimal 1MB." });
         return;
       }
       setForm((prev) => ({ ...prev, proofFile: file }));
@@ -68,7 +85,17 @@ function PembayaranContent() {
         return;
       }
       if (!form.amount || parseInt(form.amount.replace(/\./g, ""), 10) === 0) {
-        setMessage({ type: "error", text: "Silakan masukkan jumlah pembayaran." });
+        setMessage({
+          type: "error",
+          text: "Silakan masukkan jumlah pembayaran.",
+        });
+        return;
+      }
+      if (!form.paymentMethod) {
+        setMessage({
+          type: "error",
+          text: "Silakan pilih metode pembayaran.",
+        });
         return;
       }
       if (!form.proofFile) {
@@ -84,24 +111,34 @@ function PembayaranContent() {
         formData.append("proofImage", form.proofFile!);
         formData.append("nominal", form.amount.replace(/\./g, ""));
         formData.append("description", form.paymentType);
+        formData.append("paymentMethod", form.paymentMethod!);
 
         await paymentsApi.create(formData);
 
-        setMessage({ type: "success", text: "Pembayaran berhasil dikirim! Menunggu konfirmasi admin." });
-        setForm({ paymentType: "", amount: "", proofFile: null });
+        setMessage({
+          type: "success",
+          text: "Pembayaran berhasil dikirim! Menunggu konfirmasi admin.",
+        });
+        setForm({
+          paymentType: "",
+          amount: "",
+          proofFile: null,
+          paymentMethod: null,
+        });
         setPreviewUrl(null);
       } catch (error: any) {
-        const errorMsg = error?.message || "Terjadi kesalahan. Silakan coba lagi.";
+        const errorMsg =
+          error?.message || "Terjadi kesalahan. Silakan coba lagi.";
         setMessage({ type: "error", text: errorMsg });
       } finally {
         setLoading(false);
       }
     },
-    [form]
+    [form],
   );
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto">
       {/* Header Section - Consistent with Admin */}
       <div className="mb-6">
         <Breadcrumb pageName="Pembayaran" />
@@ -111,7 +148,9 @@ function PembayaranContent() {
       <div className="rounded-2xl border border-stroke bg-white p-6 shadow-default dark:border-strokedark dark:bg-boxdark">
         {/* Card Header */}
         <div className="mb-6 border-b border-stroke pb-4 dark:border-strokedark">
-          <h3 className="text-lg font-semibold text-dark dark:text-white">Form Pembayaran</h3>
+          <h3 className="text-lg font-semibold text-dark dark:text-white">
+            Form Pembayaran
+          </h3>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Isi formulir di bawah untuk melakukan pembayaran simpanan.
           </p>
@@ -122,7 +161,7 @@ function PembayaranContent() {
             <div
               className={`mb-6 rounded-lg border p-4 ${
                 message.type === "success"
-                  ? "border-green-300 bg-green-50 text-green-700 dark:border-green-600 dark:bg-green-900/20 dark:text-green-400"
+                  ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
                   : "border-red-300 bg-red-50 text-red-700 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400"
               }`}
             >
@@ -132,13 +171,21 @@ function PembayaranContent() {
 
           {/* Payment Type */}
           <div className="mb-5">
-            <label className="mb-2 block text-sm font-medium text-dark dark:text-white" htmlFor="paymentType">
+            <label
+              className="mb-2 block text-sm font-medium text-dark dark:text-white"
+              htmlFor="paymentType"
+            >
               Jenis Pembayaran <span className="text-red-500">*</span>
             </label>
             <select
               id="paymentType"
               value={form.paymentType}
-              onChange={(e) => setForm((prev) => ({ ...prev, paymentType: e.target.value as PaymentType }))}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  paymentType: e.target.value as PaymentType,
+                }))
+              }
               className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-dark outline-none transition focus:border-primary dark:border-strokedark dark:text-white dark:focus:border-primary"
               disabled={loading}
             >
@@ -153,11 +200,16 @@ function PembayaranContent() {
 
           {/* Amount */}
           <div className="mb-5">
-            <label className="mb-2 block text-sm font-medium text-dark dark:text-white" htmlFor="amount">
+            <label
+              className="mb-2 block text-sm font-medium text-dark dark:text-white"
+              htmlFor="amount"
+            >
               Jumlah Pembayaran (Rp) <span className="text-red-500">*</span>
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">Rp</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                Rp
+              </span>
               <input
                 id="amount"
                 type="text"
@@ -171,9 +223,33 @@ function PembayaranContent() {
             </div>
           </div>
 
+          {/* Payment Method */}
+          <div className="mb-5">
+            <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
+              Metode Pembayaran <span className="text-red-500">*</span>
+            </label>
+            <PaymentMethodSelector
+              selectedMethod={form.paymentMethod}
+              onMethodChange={(method) =>
+                setForm((prev) => ({ ...prev, paymentMethod: method }))
+              }
+              disabled={loading}
+            />
+          </div>
+
+          {/* Payment Method Info */}
+          {form.paymentMethod && (
+            <div className="mb-5">
+              <PaymentMethodInfo method={form.paymentMethod} />
+            </div>
+          )}
+
           {/* File Upload */}
           <div className="mb-6">
-            <label className="mb-2 block text-sm font-medium text-dark dark:text-white" htmlFor="proofFile">
+            <label
+              className="mb-2 block text-sm font-medium text-dark dark:text-white"
+              htmlFor="proofFile"
+            >
               Bukti Pembayaran <span className="text-red-500">*</span>
             </label>
             <div className="rounded-lg border-2 border-dashed border-stroke p-8 text-center dark:border-strokedark">
@@ -194,7 +270,10 @@ function PembayaranContent() {
                       className="mx-auto mb-3 max-h-48 rounded-lg object-contain"
                     />
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Klik untuk mengganti file: <span className="font-medium text-primary">{form.proofFile?.name}</span>
+                      Klik untuk mengganti file:{" "}
+                      <span className="font-medium text-primary">
+                        {form.proofFile?.name}
+                      </span>
                     </p>
                   </div>
                 ) : (
@@ -215,7 +294,9 @@ function PembayaranContent() {
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       Klik untuk unggah atau seret file ke sini
                     </p>
-                    <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">PNG, JPG, JPEG (maks. 5MB)</p>
+                    <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                      PNG, JPG, JPEG (maks. 1MB)
+                    </p>
                   </div>
                 )}
               </label>
@@ -227,7 +308,12 @@ function PembayaranContent() {
             <button
               type="button"
               onClick={() => {
-                setForm({ paymentType: "", amount: "", proofFile: null });
+                setForm({
+                  paymentType: "",
+                  amount: "",
+                  proofFile: null,
+                  paymentMethod: null,
+                });
                 setPreviewUrl(null);
                 setMessage(null);
               }}

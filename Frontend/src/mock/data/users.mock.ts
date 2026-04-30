@@ -22,7 +22,7 @@ let MOCK_USERS: User[] = [
     name: "Anggota KOPMA",
     role: "ANGGOTA",
     angkatan: "2021",
-    photo: "https://placehold.co/png/200x200/10b981/ffffff?text=AK",
+    photo: "https://placehold.co/png/200x200/3c50e0/ffffff?text=AK",
     isActive: true,
     createdAt: "2024-01-02T00:00:00Z",
     updatedAt: "2024-01-02T00:00:00Z",

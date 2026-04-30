@@ -20,75 +20,98 @@ enum PaymentStatus {
   REJECTED
 }
 
+enum PaymentMethod {
+  Cash
+  QRIS
+  BankTransfer
+}
+
 enum WithdrawalStatus {
   PENDING
   APPROVED
   REJECTED
 }
 
+enum WithdrawalPaymentMethod {
+  Cash
+  BankTransfer
+}
+
+enum SavingType {
+  Pokok
+  Wajib
+  Sukarela
+}
+
 model User {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   name      String
-  email     String   @unique
+  email     String    @unique
   password  String
-  role      Role     @default(ANGGOTA)
+  role      Role      @default(ANGGOTA)
   angkatan  String?
-  nim       String?  // Nomor Induk Mahasiswa
-  fakultas  String?  // Fakultas
-  prodi     String?  // Program Studi/Jurusan
+  nim       String? // Nomor Induk Mahasiswa
+  fakultas  String? // Fakultas
+  prodi     String? // Program Studi/Jurusan
   birthDate DateTime? // Tanggal Lahir
-  address   String?   // Alamat
+  address   String? // Alamat
+  phone     String? // Nomor Handphone
   photo     String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   // Relations
-  payments      Payment[]
-  withdrawals   Withdrawal[]
-  savings       Saving?
-  verifiedPayments   Payment[]  @relation("VerifiedPayments")
-  verifiedWithdrawals Withdrawal[] @relation("VerifiedWithdrawals")
-  refreshTokens RefreshToken[]
-  loginHistory  LoginHistory[]
-  notifications Notification[]
+  payments            Payment[]
+  withdrawals         Withdrawal[]
+  savings             Saving?
+  verifiedPayments    Payment[]      @relation("VerifiedPayments")
+  verifiedWithdrawals Withdrawal[]   @relation("VerifiedWithdrawals")
+  refreshTokens       RefreshToken[]
+  loginHistory        LoginHistory[]
+  notifications       Notification[]
+  announcements       Announcement[]
 
   @@map("users")
 }
 
 model Payment {
-  id          String        @id @default(uuid())
-  userId      String
-  nominal     Decimal       @db.Decimal(15, 2)
-  proofImage  String
-  status      PaymentStatus @default(PENDING)
-  description String?
-  verifiedBy  String?
-  verifiedAt  DateTime?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id            String        @id @default(uuid())
+  userId        String
+  nominal       Decimal       @db.Decimal(15, 2)
+  proofImage    String
+  status        PaymentStatus @default(PENDING)
+  description   String?
+  paymentMethod PaymentMethod @default(Cash)
+  verifiedBy    String?
+  verifiedAt    DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   // Relations
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   verifier User? @relation("VerifiedPayments", fields: [verifiedBy], references: [id])
 
   @@map("payments")
 }
 
 model Withdrawal {
-  id          String           @id @default(uuid())
-  userId      String
-  nominal     Decimal          @db.Decimal(15, 2)
-  reason      String
-  status      WithdrawalStatus @default(PENDING)
-  verifiedBy  String?
-  verifiedAt  DateTime?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id              String                  @id @default(uuid())
+  userId          String
+  nominal         Decimal                 @db.Decimal(15, 2)
+  reason          String
+  savingType      SavingType              @default(Sukarela)
+  paymentMethod   WithdrawalPaymentMethod @default(Cash)
+  status          WithdrawalStatus        @default(PENDING)
+  rejectionReason String?
+  verifiedBy      String?
+  verifiedAt      DateTime?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
 
   // Relations
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  verifier User?  @relation("VerifiedWithdrawals", fields: [verifiedBy], references: [id])
+  user     User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verifier User? @relation("VerifiedWithdrawals", fields: [verifiedBy], references: [id])
 
   @@map("withdrawals")
 }
@@ -106,14 +129,14 @@ model Saving {
 }
 
 model RefreshToken {
-  id                String   @id @default(uuid())
-  token             String   @unique
+  id                String        @id @default(uuid())
+  token             String        @unique
   userId            String
   userAgent         String?
   expiresAt         DateTime
   revokedAt         DateTime?
-  createdAt         DateTime @default(now())
-  replacedByTokenId String?  @unique
+  createdAt         DateTime      @default(now())
+  replacedByTokenId String?       @unique
   replacedByToken   RefreshToken? @relation("TokenRotation", fields: [replacedByTokenId], references: [id])
   nextToken         RefreshToken? @relation("TokenRotation")
 
@@ -126,34 +149,34 @@ model RefreshToken {
 }
 
 model LoginHistory {
-  id             String   @id @default(uuid())
-  userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   // Connection info
-  ipAddress      String
-  userAgent      String
-  
+  ipAddress String
+  userAgent String
+
   // Parsed browser/device info
   browser        String?
   browserVersion String?
   os             String?
   osVersion      String?
-  device         String?      // Desktop, Mobile, Tablet
+  device         String? // Desktop, Mobile, Tablet
   deviceBrand    String?
   deviceModel    String?
-  
+
   // Location info
-  country        String?
-  city           String?
-  region         String?
-  
+  country String?
+  city    String?
+  region  String?
+
   // Status
-  status         String       // SUCCESS, FAILED
-  failureReason  String?
-  
-  createdAt      DateTime @default(now())
-  
+  status        String // SUCCESS, FAILED
+  failureReason String?
+
+  createdAt DateTime @default(now())
+
   @@index([userId])
   @@index([createdAt])
   @@index([ipAddress])
@@ -162,8 +185,8 @@ model LoginHistory {
 
 model Notification {
   id        String   @id @default(uuid())
-  userId    String?  // Null means broadcast to all admins
-  type      String   // payment, withdrawal, system
+  userId    String? // Null means broadcast to all admins
+  type      String // payment, withdrawal, system
   title     String
   message   String
   isRead    Boolean  @default(false)
@@ -178,4 +201,22 @@ model Notification {
   @@index([createdAt])
   @@index([isRead])
   @@map("notifications")
+}
+
+model Announcement {
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(true)
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  creator User @relation(fields: [createdBy], references: [id])
+
+  @@index([startDate])
+  @@index([endDate])
+  @@map("announcements")
 }

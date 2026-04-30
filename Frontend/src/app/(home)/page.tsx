@@ -102,9 +102,9 @@ function AdminDashboard({ userName }: { userName: string }) {
           />
         </svg>
       ),
-      color: "bg-green-500",
-      bgColor: "bg-green-100 dark:bg-green-900/30",
-      textColor: "text-green-500",
+      color: "bg-blue-500",
+      bgColor: "bg-blue-100 dark:bg-blue-900/30",
+      textColor: "text-blue-500",
     },
     {
       title: "Pembayaran Pending",
@@ -254,7 +254,10 @@ function AdminDashboard({ userName }: { userName: string }) {
           {/* Charts Grid */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <PaymentStatusChart data={data.paymentStatus} />
-            <SavingsBreakdownChart data={data.savingsBreakdown} />
+            <SavingsBreakdownChart
+              data={data.savingsBreakdown}
+              totalAmount={data.totalSavings}
+            />
           </div>
         </div>
 
@@ -292,7 +295,7 @@ function AdminDashboard({ userName }: { userName: string }) {
                         alert.status === "pending"
                           ? "bg-red-100 text-red-500 dark:bg-red-900/30"
                           : alert.status === "success"
-                            ? "bg-green-100 text-green-500 dark:bg-green-900/30"
+                            ? "bg-blue-100 text-blue-500 dark:bg-blue-900/30"
                             : "bg-blue-100 text-blue-500 dark:bg-blue-900/30"
                       }`}
                     >
@@ -359,7 +362,7 @@ function AdminDashboard({ userName }: { userName: string }) {
                                   ? "/admin/verifikasi-penarikan"
                                   : "/admin/verifikasi-pembayaran"
                               }
-                              className="block rounded-lg bg-green-500 px-3 py-1 text-center text-xs font-medium text-white hover:bg-green-600"
+                              className="block rounded-lg bg-blue-500 px-3 py-1 text-center text-xs font-medium text-white hover:bg-blue-600"
                             >
                               Setujui
                             </Link>
@@ -469,7 +472,7 @@ function AdminDashboard({ userName }: { userName: string }) {
                             activity.status === "PENDING"
                               ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
                               : activity.status === "APPROVED"
-                                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
                                 : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                           }`}
                         >
@@ -518,7 +521,7 @@ function AdminDashboard({ userName }: { userName: string }) {
                     <div
                       className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
                         approval.status === "APPROVED"
-                          ? "bg-green-100 text-green-500 dark:bg-green-900/30"
+                          ? "bg-blue-100 text-blue-500 dark:bg-blue-900/30"
                           : "bg-red-100 text-red-500 dark:bg-red-900/30"
                       }`}
                     >
@@ -571,7 +574,7 @@ function AdminDashboard({ userName }: { userName: string }) {
                     <span
                       className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                         approval.status === "APPROVED"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                          ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
                           : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                       }`}
                     >
@@ -665,7 +668,7 @@ function AnggotaDashboard({ userName }: { userName: string }) {
       PENDING:
         "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
       APPROVED:
-        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+        "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
       REJECTED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
     };
     const statusLabels: Record<string, string> = {
@@ -769,8 +772,8 @@ function AnggotaDashboard({ userName }: { userName: string }) {
           />
         </svg>
       ),
-      bgColor: "bg-green-100 dark:bg-green-900/30",
-      textColor: "text-green-500",
+      bgColor: "bg-blue-100 dark:bg-blue-900/30",
+      textColor: "text-blue-500",
     },
   ];
 
@@ -829,7 +832,10 @@ function AnggotaDashboard({ userName }: { userName: string }) {
             <h3 className="mb-4 text-lg font-semibold text-dark dark:text-white">
               Breakdown Simpanan
             </h3>
-            <SavingsBreakdownChart data={data.savingsBreakdown} />
+            <SavingsBreakdownChart
+              data={data.savingsBreakdown}
+              totalAmount={data.totalBalance}
+            />
           </div>
         </div>
 
@@ -911,7 +917,7 @@ function AnggotaDashboard({ userName }: { userName: string }) {
                           activity.status === "PENDING"
                             ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
                             : activity.status === "APPROVED"
-                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                              ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
                               : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                         }`}
                       >

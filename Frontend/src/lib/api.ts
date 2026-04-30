@@ -31,7 +31,11 @@ export const authApi = {
         } catch {
           errorData = { message: "Login failed" };
         }
-        return { success: false, message: errorData.message || "Login failed" };
+        return {
+          success: false,
+          message: errorData.message || "Login failed",
+          data: null,
+        };
       }
 
       const data = await response.json();
@@ -53,7 +57,11 @@ export const authApi = {
         data: data,
       };
     } catch (err: any) {
-      return { success: false, message: err.message || "Network Error" };
+      return {
+        success: false,
+        message: err.message || "Network Error",
+        data: null,
+      };
     }
   },
 
@@ -211,6 +219,10 @@ export const withdrawalsApi = {
   approve: (id: string, data: any): Promise<ApiResponse> => {
     return apiHandler(`/withdrawals/${id}/approve`, "PATCH", data);
   },
+
+  withdrawAll: (data: { reason: string; paymentMethod?: string }): Promise<ApiResponse> => {
+    return apiHandler("/withdrawals/withdraw-all", "POST", data);
+  },
 };
 
 // ==================== SAVINGS ====================
@@ -286,5 +298,44 @@ export const reportsApi = {
 
   getSummary: (): Promise<ApiResponse> => {
     return apiHandler("/reports/summary", "GET");
+  },
+};
+
+// ==================== ANNOUNCEMENTS ====================
+
+export const announcementsApi = {
+  getActive: (): Promise<ApiResponse> => {
+    return apiHandler("/announcements/active", "GET");
+  },
+
+  getAll: (): Promise<ApiResponse> => {
+    return apiHandler("/announcements", "GET");
+  },
+
+  create: (data: {
+    title: string;
+    message: string;
+    startDate: string;
+    endDate: string;
+    isActive?: boolean;
+  }): Promise<ApiResponse> => {
+    return apiHandler("/announcements", "POST", data);
+  },
+
+  update: (
+    id: string,
+    data: Partial<{
+      title: string;
+      message: string;
+      startDate: string;
+      endDate: string;
+      isActive: boolean;
+    }>
+  ): Promise<ApiResponse> => {
+    return apiHandler(`/announcements/${id}`, "PATCH", data);
+  },
+
+  remove: (id: string): Promise<ApiResponse> => {
+    return apiHandler(`/announcements/${id}`, "DELETE");
   },
 };

@@ -9,12 +9,18 @@ import {
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
+import { CreateCustomNotificationDto } from './dto/create-custom-notification.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { NotificationsGateway } from './notifications.gateway';
 
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
 export class NotificationsController {
-  constructor(private readonly notificationsService: NotificationsService) {}
+  constructor(
+    private readonly notificationsService: NotificationsService,
+    private readonly notificationsGateway: NotificationsGateway,
+  ) {}
 
   @Get()
   async getNotifications(
@@ -34,10 +40,10 @@ export class NotificationsController {
   async getUnreadCount(
     @Request() req: { user: { sub: string; role: string } },
   ) {
-    const count = await (this.notificationsService.getUnreadCount(
+    const count = await this.notificationsService.getUnreadCount(
       req.user.sub,
       req.user.role,
-    ) as Promise<number>);
+    );
     return {
       success: true,
       data: { count },
@@ -71,6 +77,43 @@ export class NotificationsController {
     return {
       success: true,
       data: notification,
+    };
+  }
+
+  @Post('custom')
+  @Roles('ADMIN')
+  async createCustom(
+    @Body() dto: CreateCustomNotificationDto,
+  ) {
+    const isBroadcast = !dto.targetUserId;
+    
+    // Create DB record
+    const notification = await this.notificationsService.create({
+      type: 'system',
+      title: dto.title,
+      message: dto.message,
+      actionUrl: dto.actionUrl,
+      userId: dto.targetUserId,
+      isAdminNotification: false,
+    });
+
+    // Broadcast via WebSocket
+    this.notificationsGateway.broadcastCustomNotification({
+      targetUserId: dto.targetUserId,
+      notification: {
+        id: notification.id,
+        title: dto.title,
+        message: dto.message,
+        actionUrl: dto.actionUrl,
+      },
+    });
+
+    return {
+      success: true,
+      data: notification,
+      message: isBroadcast 
+        ? 'Notification broadcasted to all users' 
+        : 'Notification sent to user',
     };
   }
 }
