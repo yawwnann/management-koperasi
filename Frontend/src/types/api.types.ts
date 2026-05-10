@@ -148,6 +148,39 @@ export interface SavingsChartData {
   }>;
 }
 
+export interface MandatorySavingRecord {
+  id: string;
+  month: number;
+  year: number;
+  nominal: number;
+  status: "PAID" | "UNPAID";
+  paidAt: string | null;
+  payment: {
+    id: string;
+    createdAt: string;
+    status: string;
+    paymentMethod: string;
+  } | null;
+}
+
+export interface VoluntarySavingRecord {
+  id: string;
+  nominal: number;
+  createdAt: string;
+  payment: {
+    id: string;
+    createdAt: string;
+    status: string;
+    paymentMethod: string;
+  } | null;
+}
+
+export interface SavingsHistoryResponse {
+  userId: string;
+  mandatorySavings: MandatorySavingRecord[];
+  voluntarySavings: VoluntarySavingRecord[];
+}
+
 export interface UserDashboardData {
   user: {
     name: string;

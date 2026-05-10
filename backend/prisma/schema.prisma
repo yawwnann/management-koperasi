@@ -43,6 +43,11 @@ enum SavingType {
   Sukarela
 }
 
+enum MandatorySavingStatus {
+  UNPAID
+  PAID
+}
+
 model User {
   id        String    @id @default(uuid())
   name      String
@@ -71,6 +76,8 @@ model User {
   loginHistory        LoginHistory[]
   notifications       Notification[]
   announcements       Announcement[]
+  mandatorySavings    MandatorySaving[]
+  voluntarySavings    VoluntarySaving[]
 
   @@map("users")
 }
@@ -89,8 +96,10 @@ model Payment {
   updatedAt     DateTime      @updatedAt
 
   // Relations
-  user     User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  verifier User? @relation("VerifiedPayments", fields: [verifiedBy], references: [id])
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verifier         User?             @relation("VerifiedPayments", fields: [verifiedBy], references: [id])
+  mandatorySaving  MandatorySaving?
+  voluntarySaving  VoluntarySaving?
 
   @@map("payments")
 }
@@ -219,4 +228,36 @@ model Announcement {
   @@index([startDate])
   @@index([endDate])
   @@map("announcements")
+}
+
+model MandatorySaving {
+  id        String                @id @default(uuid())
+  userId    String
+  month     Int                   // 1-12
+  year      Int
+  nominal   Decimal               @db.Decimal(15, 2)
+  status    MandatorySavingStatus @default(UNPAID)
+  paidAt    DateTime?
+  paymentId String?               @unique
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment Payment? @relation(fields: [paymentId], references: [id])
+
+  @@unique([userId, month, year])
+  @@map("mandatory_savings")
+}
+
+model VoluntarySaving {
+  id        String   @id @default(uuid())
+  userId    String
+  nominal   Decimal  @db.Decimal(15, 2)
+  paymentId String?  @unique
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment Payment? @relation(fields: [paymentId], references: [id])
+
+  @@map("voluntary_savings")
 }

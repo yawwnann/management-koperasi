@@ -198,7 +198,7 @@ export class PaymentsService {
       },
     });
 
-    // If approved, update user's savings
+    // If approved, update user's savings and track in dedicated tables
     if (approvePaymentDto.status === 'APPROVED') {
       await this.prisma.saving.upsert({
         where: { userId: payment.userId },
@@ -212,6 +212,48 @@ export class PaymentsService {
           total: payment.nominal,
         },
       });
+
+      // Track in MandatorySaving or VoluntarySaving based on description
+      const desc = (payment.description || '').toLowerCase();
+      const paymentDate = new Date(payment.createdAt);
+      const month = paymentDate.getMonth() + 1; // 1-12
+      const year = paymentDate.getFullYear();
+
+      if (desc.includes('wajib')) {
+        await this.prisma.mandatorySaving.upsert({
+          where: {
+            userId_month_year: {
+              userId: payment.userId,
+              month,
+              year,
+            },
+          },
+          update: {
+            nominal: payment.nominal,
+            status: 'PAID',
+            paidAt: new Date(),
+            paymentId: payment.id,
+          },
+          create: {
+            userId: payment.userId,
+            month,
+            year,
+            nominal: payment.nominal,
+            status: 'PAID',
+            paidAt: new Date(),
+            paymentId: payment.id,
+          },
+        });
+      } else if (!desc.includes('pokok')) {
+        // Voluntary saving (not pokok and not wajib)
+        await this.prisma.voluntarySaving.create({
+          data: {
+            userId: payment.userId,
+            nominal: payment.nominal,
+            paymentId: payment.id,
+          },
+        });
+      }
     }
 
     // Send notification to the user via WebSocket

@@ -77,6 +77,13 @@ export const NAV_DATA = [
         items: [],
       },
       {
+        title: "Riwayat Simpanan",
+        icon: Icons.Report,
+        roles: ["ADMIN"],
+        url: "/admin/riwayat-simpanan",
+        items: [],
+      },
+      {
         title: "Laporan",
         icon: Icons.Alphabet,
         roles: ["ADMIN"],

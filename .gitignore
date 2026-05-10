@@ -5,6 +5,8 @@
 /Frontend/node_modules/
 /.pnp
 .pnp.js
+.qodo
+.qwen
 .yarn/install-state.gz
 
 # testing

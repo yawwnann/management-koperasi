@@ -31,4 +31,9 @@ export class SavingsController {
   getSavingsBreakdownByUserId(@Param('id') id: string) {
     return this.savingsService.getSavingsBreakdown(id);
   }
+
+  @Get('history/:userId')
+  getSavingsHistory(@Param('userId') userId: string) {
+    return this.savingsService.getSavingsHistory(userId);
+  }
 }

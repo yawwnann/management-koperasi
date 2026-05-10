@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Camera,
   User,
@@ -10,9 +10,60 @@ import {
   Save,
   Check,
   X,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Loader2,
 } from "lucide-react";
+import Cropper, { Area, Point } from "react-easy-crop";
 import { getCurrentUser } from "@/lib/api-helpers";
 import { profileApi } from "@/lib/api";
+
+function createImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = (err) => reject(err);
+    img.src = url;
+  });
+}
+
+async function getCroppedImg(
+  imageSrc: string,
+  pixelCrop: Area,
+  rotation = 0,
+): Promise<Blob> {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d")!;
+
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+
+  ctx.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    pixelCrop.width,
+    pixelCrop.height,
+  );
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return reject(new Error("Canvas is empty"));
+        resolve(blob);
+      },
+      "image/jpeg",
+      0.9,
+    );
+  });
+}
 
 export function ProfileTab() {
   const [user, setUser] = useState<any>(null);
@@ -54,6 +105,81 @@ export function ProfileTab() {
     });
   };
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  // Crop state
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const onCropComplete = useCallback((_: Area, croppedPixels: Area) => {
+    setCroppedAreaPixels(croppedPixels);
+  }, []);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageSrc(reader.result as string);
+      setSelectedFile(file);
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleCropConfirm = async () => {
+    if (!imageSrc || !croppedAreaPixels) return;
+
+    setUploading(true);
+    try {
+      const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
+      const croppedFile = new File([croppedBlob], selectedFile?.name || "photo.jpg", {
+        type: "image/jpeg",
+      });
+      const formData = new FormData();
+      formData.append("photo", croppedFile);
+
+      const response = await profileApi.updateProfilePhoto(formData);
+      if (response.success) {
+        const currentUser = JSON.parse(localStorage.getItem("current_user") || "{}");
+        const photoUrl = response.data?.photo || response.data?.url || URL.createObjectURL(croppedBlob);
+        const updatedUser = { ...currentUser, photo: photoUrl };
+        localStorage.setItem("current_user", JSON.stringify(updatedUser));
+        setUser(updatedUser);
+        window.dispatchEvent(new Event("profile-updated"));
+        setCropModalOpen(false);
+        setImageSrc(null);
+        setMessage({ type: "success", text: "Foto profil berhasil diperbarui." });
+        setTimeout(() => setMessage(null), 3000);
+      } else {
+        setMessage({ type: "error", text: response.message || "Gagal mengunggah foto." });
+      }
+    } catch {
+      setMessage({ type: "error", text: "Gagal memproses foto." });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleCropCancel = () => {
+    setCropModalOpen(false);
+    setImageSrc(null);
+    setSelectedFile(null);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -79,6 +205,7 @@ export function ProfileTab() {
           };
           localStorage.setItem("current_user", JSON.stringify(updatedUser));
           setUser(updatedUser);
+          window.dispatchEvent(new Event("profile-updated"));
         }
         setMessage({ type: "success", text: "Profil berhasil diperbarui." });
         setTimeout(() => setMessage(null), 3000);
@@ -148,7 +275,19 @@ export function ProfileTab() {
                 <User className="h-10 w-10 text-primary" />
               )}
             </div>
-            <button className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white shadow-md hover:bg-primary/90">
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              onChange={handlePhotoChange}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={handlePhotoClick}
+              disabled={uploading}
+              className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white shadow-md hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
               <Camera className="h-4 w-4" />
             </button>
           </div>
@@ -265,6 +404,81 @@ export function ProfileTab() {
           </div>
         </div>
       </div>
+
+      {/* Crop Modal */}
+      {cropModalOpen && imageSrc && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4">
+          <div className="flex w-full max-w-lg flex-col rounded-xl bg-white shadow-xl dark:bg-boxdark">
+            <div className="flex items-center justify-between border-b border-stroke px-6 py-4 dark:border-strokedark">
+              <h3 className="text-lg font-semibold text-dark dark:text-white">
+                Potong Foto
+              </h3>
+              <button
+                onClick={handleCropCancel}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="relative h-80 w-full bg-gray-100 dark:bg-gray-800">
+              <Cropper
+                image={imageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </div>
+
+            <div className="px-6 py-4">
+              <div className="flex items-center gap-3">
+                <ZoomOut className="h-4 w-4 text-gray-500" />
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  value={zoom}
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="w-full accent-primary"
+                />
+                <ZoomIn className="h-4 w-4 text-gray-500" />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 border-t border-stroke px-6 py-4 dark:border-strokedark">
+              <button
+                type="button"
+                onClick={handleCropCancel}
+                disabled={uploading}
+                className="rounded-lg border border-stroke px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-100 dark:border-strokedark dark:text-gray-400 dark:hover:bg-gray-700"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleCropConfirm}
+                disabled={uploading}
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Mengunggah...
+                  </>
+                ) : (
+                  "Simpan Foto"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

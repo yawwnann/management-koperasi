@@ -254,6 +254,10 @@ export const savingsApi = {
   getSavingsBreakdownByUserId: (userId: string): Promise<ApiResponse> => {
     return apiHandler(`/savings/${userId}/breakdown`, "GET");
   },
+
+  getSavingsHistory: (userId: string): Promise<ApiResponse> => {
+    return apiHandler(`/savings/history/${userId}`, "GET");
+  },
 };
 
 // ==================== PROFILE ====================

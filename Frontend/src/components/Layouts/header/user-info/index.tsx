@@ -126,12 +126,12 @@ export function UserInfo() {
             </div>
           )}
 
-          <figcaption className="space-y-1 text-base font-medium">
-            <div className="mb-2 leading-none text-dark dark:text-white">
+          <figcaption className="min-w-0 space-y-1 text-base font-medium">
+            <div className="mb-2 truncate text-dark dark:text-white">
               {USER.name}
             </div>
 
-            <div className="leading-none text-gray-6">{USER.email}</div>
+            <div className="break-words text-gray-6">{USER.email}</div>
           </figcaption>
         </figure>
 

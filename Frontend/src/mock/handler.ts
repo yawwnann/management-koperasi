@@ -1118,6 +1118,117 @@ async function handleSavingsBreakdownByUserId(
   }
 }
 
+async function handleSavingsHistory(
+  userId: string,
+): Promise<ApiResponse> {
+  if (USE_MOCK) {
+    await delay();
+    return createMockResponse({
+      userId,
+      mandatorySavings: [
+        {
+          id: "mock-ms-1",
+          month: 1,
+          year: 2026,
+          nominal: 50000,
+          status: "PAID",
+          paidAt: "2026-01-15T00:00:00.000Z",
+          payment: {
+            id: "mock-pay-1",
+            createdAt: "2026-01-15T00:00:00.000Z",
+            status: "APPROVED",
+            paymentMethod: "Cash",
+          },
+        },
+        {
+          id: "mock-ms-2",
+          month: 2,
+          year: 2026,
+          nominal: 50000,
+          status: "PAID",
+          paidAt: "2026-02-10T00:00:00.000Z",
+          payment: {
+            id: "mock-pay-2",
+            createdAt: "2026-02-10T00:00:00.000Z",
+            status: "APPROVED",
+            paymentMethod: "QRIS",
+          },
+        },
+        {
+          id: "mock-ms-3",
+          month: 3,
+          year: 2026,
+          nominal: 50000,
+          status: "UNPAID",
+          paidAt: null,
+          payment: null,
+        },
+        {
+          id: "mock-ms-4",
+          month: 4,
+          year: 2026,
+          nominal: 50000,
+          status: "UNPAID",
+          paidAt: null,
+          payment: null,
+        },
+      ],
+      voluntarySavings: [
+        {
+          id: "mock-vs-1",
+          nominal: 100000,
+          createdAt: "2026-01-20T00:00:00.000Z",
+          payment: {
+            id: "mock-pay-3",
+            createdAt: "2026-01-20T00:00:00.000Z",
+            status: "APPROVED",
+            paymentMethod: "BankTransfer",
+          },
+        },
+        {
+          id: "mock-vs-2",
+          nominal: 75000,
+          createdAt: "2026-03-05T00:00:00.000Z",
+          payment: {
+            id: "mock-pay-4",
+            createdAt: "2026-03-05T00:00:00.000Z",
+            status: "APPROVED",
+            paymentMethod: "Cash",
+          },
+        },
+      ],
+    });
+  }
+
+  try {
+    const token = getAuthToken();
+    const response = await fetch(
+      `${API_BASE_URL}/savings/history/${userId}`,
+      {
+        method: "GET",
+        headers: createHeaders(token),
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(
+        error.message || "Failed to fetch savings history",
+      );
+    }
+
+    const responseData = await response.json();
+    return wrapBackendResponse(responseData);
+  } catch (err: any) {
+    console.error("[Fallback to mock]", err);
+    return createMockResponse({
+      userId,
+      mandatorySavings: [],
+      voluntarySavings: [],
+    });
+  }
+}
+
 /**
  * Handles savings chart data
  */
@@ -1610,6 +1721,10 @@ export async function apiHandler(
     ) {
       const userId = endpoint.split("/")[2];
       return handleSavingsBreakdownByUserId(userId);
+    }
+    if (endpoint.match(/^\/savings\/history\/[^\/]+$/)) {
+      const userId = endpoint.split("/")[3];
+      return handleSavingsHistory(userId);
     }
 
     // Profile endpoints

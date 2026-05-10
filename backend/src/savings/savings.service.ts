@@ -192,4 +192,55 @@ export class SavingsService {
       },
     });
   }
+
+  async getSavingsHistory(userId: string) {
+    const mandatorySavings = await this.prisma.mandatorySaving.findMany({
+      where: { userId },
+      include: {
+        payment: {
+          select: {
+            id: true,
+            createdAt: true,
+            status: true,
+            paymentMethod: true,
+          },
+        },
+      },
+      orderBy: [{ year: 'desc' }, { month: 'desc' }],
+    });
+
+    const voluntarySavings = await this.prisma.voluntarySaving.findMany({
+      where: { userId },
+      include: {
+        payment: {
+          select: {
+            id: true,
+            createdAt: true,
+            status: true,
+            paymentMethod: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      userId,
+      mandatorySavings: mandatorySavings.map((ms) => ({
+        id: ms.id,
+        month: ms.month,
+        year: ms.year,
+        nominal: Number(ms.nominal),
+        status: ms.status,
+        paidAt: ms.paidAt,
+        payment: ms.payment,
+      })),
+      voluntarySavings: voluntarySavings.map((vs) => ({
+        id: vs.id,
+        nominal: Number(vs.nominal),
+        createdAt: vs.createdAt,
+        payment: vs.payment,
+      })),
+    };
+  }
 }
