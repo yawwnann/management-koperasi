@@ -31,12 +31,18 @@ export class UsersService {
     let passwordToHash = createUserDto.password;
 
     // If no password provided and it's a member (ANGGOTA), generate default password using NIM
-    if (!passwordToHash && createUserDto.role === 'ANGGOTA' && createUserDto.nim) {
+    if (
+      !passwordToHash &&
+      createUserDto.role === 'ANGGOTA' &&
+      createUserDto.nim
+    ) {
       passwordToHash = createUserDto.nim;
     }
 
     if (!passwordToHash) {
-      throw new BadRequestException('Password is required, or NIM for auto-generation.');
+      throw new BadRequestException(
+        'Password is required, or NIM for auto-generation.',
+      );
     }
 
     // Hash password
@@ -228,5 +234,121 @@ export class UsersService {
     });
 
     return updatedUser;
+  }
+
+  /**
+   * Get users who haven't paid mandatory savings for 5 consecutive months
+   */
+  async getUsersWithoutMandatoryPayment() {
+    // Get all active members (not admins)
+    const users = await this.prisma.user.findMany({
+      where: {
+        role: 'ANGGOTA',
+        isActive: true,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        angkatan: true,
+        nim: true,
+        fakultas: true,
+        prodi: true,
+        phone: true,
+        photo: true,
+        createdAt: true,
+      },
+    });
+
+    const usersWithoutPayment: Array<{
+      id: string;
+      name: string;
+      email: string;
+      angkatan: string | null;
+      nim: string | null;
+      fakultas: string | null;
+      prodi: string | null;
+      phone: string | null;
+      photo: string | null;
+      lastPaymentDate: Date | null;
+      monthsWithoutPayment: number;
+    }> = [];
+
+    // Check each user's payment history
+    for (const user of users) {
+      // Get last 5 months of approved payments with "wajib" in description
+      const fiveMonthsAgo = new Date();
+      fiveMonthsAgo.setMonth(fiveMonthsAgo.getMonth() - 5);
+
+      const mandatoryPayments = await this.prisma.payment.findMany({
+        where: {
+          userId: user.id,
+          status: 'APPROVED',
+          description: {
+            contains: 'wajib',
+            mode: 'insensitive',
+          },
+          createdAt: {
+            gte: fiveMonthsAgo,
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      // Check if user has made any mandatory payment in the last 5 months
+      if (mandatoryPayments.length === 0) {
+        // Get the last mandatory payment date (if any)
+        const lastMandatoryPayment = await this.prisma.payment.findFirst({
+          where: {
+            userId: user.id,
+            status: 'APPROVED',
+            description: {
+              contains: 'wajib',
+              mode: 'insensitive',
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        });
+
+        usersWithoutPayment.push({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          angkatan: user.angkatan,
+          nim: user.nim,
+          fakultas: user.fakultas,
+          prodi: user.prodi,
+          phone: user.phone,
+          photo: user.photo,
+          lastPaymentDate: lastMandatoryPayment?.createdAt || null,
+          monthsWithoutPayment: this.calculateMonthsDifference(
+            lastMandatoryPayment?.createdAt || user.createdAt,
+            new Date(),
+          ),
+        });
+      }
+    }
+
+    // Sort by months without payment (descending)
+    return usersWithoutPayment.sort(
+      (a, b) => b.monthsWithoutPayment - a.monthsWithoutPayment,
+    );
+  }
+
+  /**
+   * Calculate the difference in months between two dates
+   */
+  private calculateMonthsDifference(startDate: Date, endDate: Date): number {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const yearsDiff = end.getFullYear() - start.getFullYear();
+    const monthsDiff = end.getMonth() - start.getMonth();
+
+    return yearsDiff * 12 + monthsDiff;
   }
 }

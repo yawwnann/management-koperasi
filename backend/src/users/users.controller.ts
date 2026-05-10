@@ -75,6 +75,12 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  @Get('delinquent/mandatory-payment')
+  @Roles('ADMIN')
+  getUsersWithoutMandatoryPayment() {
+    return this.usersService.getUsersWithoutMandatoryPayment();
+  }
+
   @Get(':id')
   @Roles('ADMIN')
   findOne(@Param('id') id: string) {

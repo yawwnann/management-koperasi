@@ -797,6 +797,39 @@ function AnggotaDashboard({ userName }: { userName: string }) {
       </div>
 
       {/* Stats Cards - Same as Admin */}
+      {/* Pemutihan Alert */}
+      {data.pemutihanAlert?.status && (
+        <div className="mb-6 flex items-start gap-4 rounded-2xl border border-orange-300 bg-orange-50 p-5 shadow-sm dark:border-orange-500/40 dark:bg-orange-900/10">
+          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30">
+            <svg className="h-6 w-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-base font-bold text-orange-700 dark:text-orange-400">
+              Peringatan Pemutihan Simpanan Wajib
+            </p>
+            <p className="mt-1 text-sm text-orange-600 dark:text-orange-300">
+              Anda belum membayar simpanan wajib selama{" "}
+              <span className="font-semibold">{data.pemutihanAlert.monthsUnpaid} bulan</span>.
+              Anggota yang tidak membayar selama <span className="font-semibold">5 bulan berturut-turut</span> dapat
+              dikenakan <strong>pemutihan (penghapusan keanggotaan)</strong> sesuai ketentuan koperasi.
+              Segera lakukan pembayaran untuk menghindari konsekuensi lebih lanjut.
+            </p>
+            <a
+              href="/pembayaran"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 transition"
+            >
+              Bayar Sekarang
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
         {cards.map((card) => (
           <div

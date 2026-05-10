@@ -61,6 +61,7 @@ function AnggotaContent() {
     text: string;
   } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -71,6 +72,14 @@ function AnggotaContent() {
   const [userPayments, setUserPayments] = useState<Payment[]>([]);
   const [userWithdrawals, setUserWithdrawals] = useState<Withdrawal[]>([]);
   const [userSavings, setUserSavings] = useState<SavingsBreakdown | null>(null);
+
+  // Reset password state
+  const [resetPasswordModalOpen, setResetPasswordModalOpen] = useState(false);
+  const [resetPasswordTarget, setResetPasswordTarget] = useState<User | null>(
+    null,
+  );
+  const [resetPasswordInput, setResetPasswordInput] = useState("");
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
 
   // Fakultas state
   const [fakultasList, setFakultasList] = useState<FakultasData[]>([]);
@@ -255,6 +264,40 @@ function AnggotaContent() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const openResetPasswordModal = (member: User) => {
+    setResetPasswordTarget(member);
+    setResetPasswordInput("");
+    setResetPasswordModalOpen(true);
+    setMessage(null);
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetPasswordTarget) return;
+
+    const targetNim = resetPasswordTarget.nim || "NIM";
+    const expectedText = `saya yakin mereset katasandi ${targetNim}`;
+
+    if (resetPasswordInput !== expectedText) {
+      setMessage({ type: "error", text: "Teks konfirmasi tidak sesuai." });
+      return;
+    }
+
+    setResetPasswordLoading(true);
+    try {
+      await usersApi.update(resetPasswordTarget.id, { password: targetNim });
+      setMessage({ type: "success", text: "Kata sandi berhasil direset." });
+      setResetPasswordModalOpen(false);
+      setResetPasswordTarget(null);
+    } catch (error: any) {
+      setMessage({
+        type: "error",
+        text: error?.message || "Gagal mereset kata sandi.",
+      });
+    } finally {
+      setResetPasswordLoading(false);
+    }
+  };
+
   // Detail modal functions
   const openDetailModal = async (member: User) => {
     setSelectedUser(member);
@@ -288,8 +331,13 @@ function AnggotaContent() {
         setUserWithdrawals(withdrawalsResponse.data);
       }
 
-      // Note: savings breakdown is per-user (via /savings/me), so we can't get another user's savings directly
-      // We'll show basic info from the user data instead
+      // Fetch user savings breakdown
+      const savingsResponse = await savingsApi.getSavingsBreakdownByUserId(
+        member.id,
+      );
+      if (savingsResponse.success && savingsResponse.data) {
+        setUserSavings(savingsResponse.data);
+      }
     } catch (error) {
       console.error("Failed to load user details:", error);
     } finally {
@@ -305,9 +353,21 @@ function AnggotaContent() {
     setUserSavings(null);
   };
 
-  // Pagination
-  const totalPages = Math.ceil(members.length / itemsPerPage);
-  const paginatedMembers = members.slice(
+  // Pagination & Filtering
+  const filteredMembers = members.filter((member) => {
+    if (!searchQuery) return true;
+    const lowerQuery = searchQuery.toLowerCase();
+    return (
+      member.name?.toLowerCase().includes(lowerQuery) ||
+      member.email?.toLowerCase().includes(lowerQuery) ||
+      member.nim?.toLowerCase().includes(lowerQuery) ||
+      member.phone?.toLowerCase().includes(lowerQuery) ||
+      member.angkatan?.toLowerCase().includes(lowerQuery)
+    );
+  });
+
+  const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
+  const paginatedMembers = filteredMembers.slice(
     (page - 1) * itemsPerPage,
     page * itemsPerPage,
   );
@@ -342,34 +402,83 @@ function AnggotaContent() {
       )}
 
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between rounded-lg bg-white p-4 shadow-sm dark:bg-boxdark">
+      <div className="mb-6 flex flex-col items-start justify-between gap-4 rounded-lg bg-white p-4 shadow-sm dark:bg-boxdark sm:flex-row sm:items-center">
         <div>
           <h3 className="text-base font-semibold text-dark dark:text-white">
             Daftar Anggota
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Total: {members.length} anggota
+            Total: {filteredMembers.length} anggota{" "}
+            {searchQuery && `dari ${members.length}`}
           </p>
         </div>
-        <button
-          onClick={openCreateModal}
-          className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90"
-        >
-          <svg
-            className="mr-2 h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </span>
+            <input
+              type="text"
+              placeholder="Cari nama, email, nim..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(1); // Reset page on search
+              }}
+              className="dark:bg-form-input w-full rounded-lg border border-stroke bg-transparent py-2 pl-10 pr-4 outline-none focus:border-primary focus-visible:shadow-none dark:border-strokedark sm:w-64"
             />
-          </svg>
-          Tambah Anggota
-        </button>
+          </div>
+          <Link
+            href="/admin/anggota/tunggakan"
+            className="inline-flex flex-shrink-0 items-center justify-center rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
+          >
+            <svg
+              className="mr-2 h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+            Lihat Tunggakan
+          </Link>
+          <button
+            onClick={openCreateModal}
+            className="inline-flex flex-shrink-0 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90"
+          >
+            <svg
+              className="mr-2 h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Tambah Anggota
+          </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -532,6 +641,12 @@ function AnggotaContent() {
                           }`}
                         >
                           {member.isActive ? "Nonaktifkan" : "Aktifkan"}
+                        </button>
+                        <button
+                          onClick={() => openResetPasswordModal(member)}
+                          className="rounded-md bg-purple-500 px-3 py-1 text-xs font-medium text-white transition hover:bg-purple-600"
+                        >
+                          Reset Sandi
                         </button>
                       </div>
                     </td>
@@ -1128,6 +1243,27 @@ function AnggotaContent() {
                         </div>
                       );
                     })()}
+
+                    {userSavings && userSavings.details && (
+                      <div className="mt-4 grid grid-cols-1 gap-4 border-t border-stroke pt-4 dark:border-strokedark sm:grid-cols-3">
+                        {userSavings.details.map((detail, idx) => (
+                          <div
+                            key={idx}
+                            className="rounded-lg border border-stroke p-3 dark:border-strokedark"
+                          >
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {detail.type}
+                            </p>
+                            <p className="mt-1 text-base font-semibold text-dark dark:text-white">
+                              Rp{" "}
+                              {new Intl.NumberFormat("id-ID").format(
+                                detail.amount,
+                              )}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Payment History */}
@@ -1286,6 +1422,60 @@ function AnggotaContent() {
                 className="rounded-lg bg-primary px-4 py-2 font-medium text-white transition hover:bg-primary/90"
               >
                 Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {resetPasswordModalOpen && resetPasswordTarget && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-boxdark">
+            <h3 className="mb-2 text-lg font-semibold text-dark dark:text-white">
+              Reset Kata Sandi
+            </h3>
+            <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+              Anda akan mereset kata sandi untuk anggota{" "}
+              <strong>{resetPasswordTarget.name}</strong>. Kata sandi baru akan
+              diatur menjadi:{" "}
+              <strong>{resetPasswordTarget.nim || "NIM"}</strong>.
+            </p>
+            <div className="mb-6 rounded-md bg-yellow-50 p-3 text-sm text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
+              Ketik kalimat berikut untuk mengonfirmasi: <br />
+              <span className="mt-1 block select-all font-mono font-bold">
+                saya yakin mereset katasandi {resetPasswordTarget.nim || "NIM"}
+              </span>
+            </div>
+            <input
+              type="text"
+              value={resetPasswordInput}
+              onChange={(e) => setResetPasswordInput(e.target.value)}
+              placeholder="Ketik teks konfirmasi di atas"
+              className="mb-6 w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none transition focus:border-primary dark:border-strokedark dark:text-white dark:focus:border-primary"
+              disabled={resetPasswordLoading}
+            />
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setResetPasswordModalOpen(false);
+                  setResetPasswordTarget(null);
+                }}
+                className="rounded-lg border border-stroke px-4 py-2 font-medium text-gray-600 transition hover:bg-gray-100 dark:border-strokedark dark:text-gray-400 dark:hover:bg-gray-700"
+                disabled={resetPasswordLoading}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleResetPassword}
+                disabled={
+                  resetPasswordLoading ||
+                  resetPasswordInput !==
+                    `saya yakin mereset katasandi ${resetPasswordTarget.nim || "NIM"}`
+                }
+                className="rounded-lg bg-red-500 px-4 py-2 font-medium text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {resetPasswordLoading ? "Mereset..." : "Reset Kata Sandi"}
               </button>
             </div>
           </div>

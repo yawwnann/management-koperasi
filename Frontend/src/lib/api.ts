@@ -179,6 +179,10 @@ export const usersApi = {
   deletePhoto: (id: string): Promise<ApiResponse> => {
     return apiHandler(`/users/${id}/photo`, "DELETE");
   },
+
+  getDelinquentUsers: (): Promise<ApiResponse> => {
+    return apiHandler("/users/delinquent/mandatory-payment", "GET");
+  },
 };
 
 // ==================== PAYMENTS ====================
@@ -220,7 +224,10 @@ export const withdrawalsApi = {
     return apiHandler(`/withdrawals/${id}/approve`, "PATCH", data);
   },
 
-  withdrawAll: (data: { reason: string; paymentMethod?: string }): Promise<ApiResponse> => {
+  withdrawAll: (data: {
+    reason: string;
+    paymentMethod?: string;
+  }): Promise<ApiResponse> => {
     return apiHandler("/withdrawals/withdraw-all", "POST", data);
   },
 };
@@ -242,6 +249,10 @@ export const savingsApi = {
 
   getAllSavings: (): Promise<ApiResponse> => {
     return apiHandler("/savings", "GET");
+  },
+
+  getSavingsBreakdownByUserId: (userId: string): Promise<ApiResponse> => {
+    return apiHandler(`/savings/${userId}/breakdown`, "GET");
   },
 };
 
@@ -330,7 +341,7 @@ export const announcementsApi = {
       startDate: string;
       endDate: string;
       isActive: boolean;
-    }>
+    }>,
   ): Promise<ApiResponse> => {
     return apiHandler(`/announcements/${id}`, "PATCH", data);
   },

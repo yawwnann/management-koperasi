@@ -1,4 +1,4 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Req, UseGuards, Param } from '@nestjs/common';
 import { SavingsService } from './savings.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
@@ -25,5 +25,10 @@ export class SavingsController {
   @Get()
   getAllSavings() {
     return this.savingsService.getAllSavings();
+  }
+
+  @Get(':id/breakdown')
+  getSavingsBreakdownByUserId(@Param('id') id: string) {
+    return this.savingsService.getSavingsBreakdown(id);
   }
 }

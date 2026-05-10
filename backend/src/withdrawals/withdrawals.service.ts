@@ -338,7 +338,7 @@ export class WithdrawalsService {
       throw new BadRequestException('No balance available to withdraw');
     }
 
-    // Get savings breakdown (for informational purposes in the reason)
+    // Get savings breakdown
     const approvedPayments = await this.prisma.payment.findMany({
       where: { userId, status: 'APPROVED' },
       select: { nominal: true, description: true },
@@ -371,7 +371,7 @@ export class WithdrawalsService {
       throw new BadRequestException('No sufficient balance available to withdraw.');
     }
 
-    // Build a breakdown summary to include in the reason
+    // Build breakdown summary
     const breakdownParts: string[] = [];
     if (breakdown.Pokok > 0)
       breakdownParts.push(`Pokok: Rp${breakdown.Pokok.toLocaleString('id-ID')}`);
@@ -384,60 +384,70 @@ export class WithdrawalsService {
       ? `${reason || 'Lulus / Penarikan Semua'} (${breakdownParts.join(', ')})`
       : reason || 'Lulus / Penarikan Semua';
 
-    // Determine the dominant saving type (highest balance)
-    const dominantType = (
-      Object.entries(breakdown) as [keyof typeof breakdown, number][]
-    ).reduce((a, b) => (b[1] > a[1] ? b : a), ['Sukarela', 0] as [keyof typeof breakdown, number])[0];
+    // Create separate withdrawals for each saving type with balance > 0
+    const withdrawals: any[] = [];
+    const savingTypes = ['Pokok', 'Wajib', 'Sukarela'] as const;
 
-    // Create a single withdrawal record with the full total
-    const withdrawal = await this.prisma.withdrawal.create({
-      data: {
-        userId,
-        nominal: saving.total,
-        reason: fullReason,
-        savingType: dominantType as any,
-        paymentMethod: (paymentMethod || 'Cash') as any,
-        status: 'PENDING',
-      },
-      include: {
-        user: {
-          select: { id: true, name: true, email: true },
-        },
-      },
-    });
+    for (const type of savingTypes) {
+      const amount = breakdown[type];
+      if (amount > 0) {
+        const withdrawal = await this.prisma.withdrawal.create({
+          data: {
+            userId,
+            nominal: new Prisma.Decimal(amount),
+            reason: fullReason,
+            savingType: type as any,
+            paymentMethod: (paymentMethod || 'Cash') as any,
+            status: 'PENDING',
+          },
+          include: {
+            user: {
+              select: { id: true, name: true, email: true },
+            },
+          },
+        });
 
-    // Notify Admins via WebSocket
-    this.notificationsGateway.broadcastNewWithdrawal({
-      id: withdrawal.id,
-      userId: withdrawal.userId,
-      userName: withdrawal.user.name,
-      amount: Number(withdrawal.nominal),
-      status: withdrawal.status,
-    });
-
-    // Create notification for admins via REST API
-    await this.notificationsService.create({
-      type: 'withdrawal',
-      title: 'Penarikan Semua (Lulus)',
-      message: `${withdrawal.user.name} mengajukan penarikan semua saldo sebesar Rp${Number(withdrawal.nominal).toLocaleString('id-ID')}`,
-      actionUrl: `/admin/verifikasi-penarikan`,
-      isAdminNotification: true,
-    });
-
-    // Notify Admins via Email
-    const admins = await this.prisma.user.findMany({
-      where: { role: 'ADMIN' },
-      select: { email: true },
-    });
-
-    for (const admin of admins) {
-      this.emailService.sendAdminWithdrawalNotification(
-        admin.email,
-        withdrawal.user.name,
-        Number(withdrawal.nominal),
-      );
+        withdrawals.push(withdrawal);
+      }
     }
 
-    return { success: true, withdrawals: [withdrawal] };
+    // Notify Admins - send one consolidated notification
+    if (withdrawals.length > 0) {
+      const firstWithdrawal = withdrawals[0];
+
+      // Broadcast via WebSocket
+      this.notificationsGateway.broadcastNewWithdrawal({
+        id: firstWithdrawal.id,
+        userId: firstWithdrawal.userId,
+        userName: firstWithdrawal.user.name,
+        amount: totalAmount,
+        status: 'PENDING',
+      });
+
+      // Create notification in database
+      await this.notificationsService.create({
+        type: 'withdrawal',
+        title: 'Penarikan Semua (Lulus)',
+        message: `${firstWithdrawal.user.name} mengajukan penarikan semua saldo sebesar Rp${totalAmount.toLocaleString('id-ID')} (${withdrawals.length} pengajuan)`,
+        actionUrl: `/admin/verifikasi-penarikan`,
+        isAdminNotification: true,
+      });
+
+      // Send email to admins
+      const admins = await this.prisma.user.findMany({
+        where: { role: 'ADMIN' },
+        select: { email: true },
+      });
+
+      for (const admin of admins) {
+        this.emailService.sendAdminWithdrawalNotification(
+          admin.email,
+          firstWithdrawal.user.name,
+          totalAmount,
+        );
+      }
+    }
+
+    return { success: true, withdrawals };
   }
 }

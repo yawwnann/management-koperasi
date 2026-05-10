@@ -433,6 +433,44 @@ async function handleUsersList(): Promise<ApiResponse> {
 }
 
 /**
+ * Handles delinquent users (users without mandatory payment for 5+ months)
+ */
+async function handleDelinquentUsers(): Promise<ApiResponse> {
+  if (USE_MOCK) {
+    await delay();
+    // Mock data: filter users who haven't paid mandatory savings
+    const users = mockData.getUsersList();
+    const delinquentUsers = users
+      .filter((user: any) => user.role === "ANGGOTA")
+      .map((user: any) => ({
+        ...user,
+        lastPaymentDate: null,
+        monthsWithoutPayment: Math.floor(Math.random() * 12) + 5, // Random 5-16 months
+      }))
+      .slice(0, 3); // Return only 3 for demo
+    return createMockResponse(delinquentUsers);
+  }
+
+  const token = getAuthToken();
+  const response = await fetch(
+    `${API_BASE_URL}/users/delinquent/mandatory-payment`,
+    {
+      method: "GET",
+      headers: createHeaders(token),
+      credentials: "include",
+    },
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to fetch delinquent users");
+  }
+
+  const responseData = await response.json();
+  return wrapBackendResponse(responseData);
+}
+
+/**
  * Handles get single user
  */
 async function handleGetUser(id: string): Promise<ApiResponse> {
@@ -832,7 +870,10 @@ async function handleCreateWithdrawal(
 async function handleWithdrawAll(data: any): Promise<ApiResponse> {
   if (USE_MOCK) {
     await delay();
-    return createMockErrorResponse(501, "Mock for withdraw all is not yet implemented");
+    return createMockErrorResponse(
+      501,
+      "Mock for withdraw all is not yet implemented",
+    );
   }
 
   const token = getAuthToken();
@@ -998,6 +1039,71 @@ async function handleSavingsBreakdown(): Promise<ApiResponse> {
       pokok: Math.round(balance * 0.2),
       wajib: Math.round(balance * 0.5),
       sukarela: Math.round(balance * 0.3),
+    };
+
+    return createMockResponse({
+      total: balance,
+      breakdown,
+      details: [
+        { type: "Simpanan Pokok", amount: breakdown.pokok },
+        { type: "Simpanan Wajib", amount: breakdown.wajib },
+        { type: "Simpanan Sukarela", amount: breakdown.sukarela },
+      ],
+    });
+  }
+}
+
+/**
+ * Handles savings breakdown for specific user
+ */
+async function handleSavingsBreakdownByUserId(
+  userId: string,
+): Promise<ApiResponse> {
+  if (USE_MOCK) {
+    await delay();
+    const balance = 150000;
+    const breakdown = {
+      pokok: 50000,
+      wajib: 50000,
+      sukarela: 50000,
+    };
+    return createMockResponse({
+      total: balance,
+      breakdown,
+      details: [
+        { type: "Simpanan Pokok", amount: breakdown.pokok },
+        { type: "Simpanan Wajib", amount: breakdown.wajib },
+        { type: "Simpanan Sukarela", amount: breakdown.sukarela },
+      ],
+    });
+  }
+
+  try {
+    const token = getAuthToken();
+    const response = await fetch(
+      `${API_BASE_URL}/savings/${userId}/breakdown`,
+      {
+        method: "GET",
+        headers: createHeaders(token),
+      },
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(
+        error.message || "Failed to fetch user savings breakdown",
+      );
+    }
+
+    const responseData = await response.json();
+    return wrapBackendResponse(responseData);
+  } catch (err: any) {
+    console.error("[Fallback to mock]", err);
+    const balance = 150000;
+    const breakdown = {
+      pokok: 50000,
+      wajib: 50000,
+      sukarela: 50000,
     };
 
     return createMockResponse({
@@ -1403,6 +1509,12 @@ export async function apiHandler(
     if (endpoint === "/users" && method === "GET") {
       return handleUsersList();
     }
+    if (
+      endpoint === "/users/delinquent/mandatory-payment" &&
+      method === "GET"
+    ) {
+      return handleDelinquentUsers();
+    }
     if (endpoint.startsWith("/users/") && method === "GET") {
       const id = endpoint.split("/")[2];
       return handleGetUser(id);
@@ -1491,6 +1603,14 @@ export async function apiHandler(
     if (endpoint === "/savings") {
       return handleAllSavings();
     }
+    if (
+      endpoint.startsWith("/savings/") &&
+      endpoint.endsWith("/breakdown") &&
+      endpoint !== "/savings/me/breakdown"
+    ) {
+      const userId = endpoint.split("/")[2];
+      return handleSavingsBreakdownByUserId(userId);
+    }
 
     // Profile endpoints
     if (endpoint === "/profile/me" && method === "GET") {
@@ -1531,7 +1651,8 @@ export async function apiHandler(
 
     // Announcements endpoints — proxy to real backend (no mock data)
     if (endpoint === "/announcements/active" && method === "GET") {
-      if (USE_MOCK) return createMockResponse([], "No active announcements (mock)");
+      if (USE_MOCK)
+        return createMockResponse([], "No active announcements (mock)");
       const token = getAuthToken();
       const response = await fetch(`${API_BASE_URL}/announcements/active`, {
         method: "GET",

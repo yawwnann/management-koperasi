@@ -179,6 +179,10 @@ export interface UserDashboardData {
     payments: number[];
     withdrawals: number[];
   };
+  pemutihanAlert?: {
+    status: boolean;
+    monthsUnpaid: number;
+  };
 }
 
 export interface AdminDashboardData {
