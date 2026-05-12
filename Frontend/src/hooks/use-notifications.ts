@@ -9,8 +9,10 @@ interface UseNotificationsReturn {
   unreadCount: number;
   isLoading: boolean;
   isConnected: boolean;
+  allRead: boolean;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  deleteAllNotifications: () => Promise<void>;
   loadNotifications: () => Promise<void>;
 }
 
@@ -97,6 +99,28 @@ export function useNotifications(): UseNotificationsReturn {
     }
   }, []);
 
+  const deleteAllNotifications = useCallback(async () => {
+    try {
+      if (typeof window === "undefined") return;
+      const token = localStorage.getItem("auth_token");
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/notifications`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        setNotifications([]);
+        setUnreadCount(0);
+      }
+    } catch (error) {
+      console.error("Failed to delete all notifications:", error);
+    }
+  }, []);
+
   // WebSocket connection
   useEffect(() => {
     const user = getCurrentUser();
@@ -169,13 +193,17 @@ export function useNotifications(): UseNotificationsReturn {
     loadNotifications();
   }, [loadNotifications]);
 
+  const allRead = unreadCount === 0 && notifications.length > 0;
+
   return {
     notifications,
     unreadCount,
     isLoading,
     isConnected,
+    allRead,
     markAsRead,
     markAllAsRead,
+    deleteAllNotifications,
     loadNotifications,
   };
 }

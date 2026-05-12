@@ -15,8 +15,15 @@ import { BellIcon } from "./icons";
 export function Notification() {
   const [isOpen, setIsOpen] = useState(false);
   const isMobile = useIsMobile();
-  const { notifications, unreadCount, markAsRead, markAllAsRead, isLoading } =
-    useNotifications();
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    deleteAllNotifications,
+    allRead,
+    isLoading,
+  } = useNotifications();
 
   const formatTime = (dateString: string) => {
     try {
@@ -62,6 +69,10 @@ export function Notification() {
     await markAllAsRead();
   };
 
+  const handleDeleteAll = async () => {
+    await deleteAllNotifications();
+  };
+
   return (
     <Dropdown isOpen={isOpen} setIsOpen={(open) => setIsOpen(open)}>
       <DropdownTrigger
@@ -99,10 +110,10 @@ export function Notification() {
             )}
             {notifications.length > 0 && (
               <button
-                onClick={handleMarkAllRead}
+                onClick={allRead ? handleDeleteAll : handleMarkAllRead}
                 className="text-sm font-medium text-primary transition-colors hover:text-opacity-80"
               >
-                Tandai semua dibaca
+                {allRead ? "Hapus semua notifikasi" : "Tandai semua dibaca"}
               </button>
             )}
           </div>

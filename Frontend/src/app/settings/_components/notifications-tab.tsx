@@ -6,8 +6,15 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 
 export function NotificationsTab() {
-  const { notifications, isLoading, markAsRead, markAllAsRead, unreadCount } =
-    useNotifications();
+  const {
+    notifications,
+    isLoading,
+    markAsRead,
+    markAllAsRead,
+    deleteAllNotifications,
+    allRead,
+    unreadCount,
+  } = useNotifications();
 
   const formatTime = (dateString: string) => {
     try {
@@ -58,10 +65,10 @@ export function NotificationsTab() {
           )}
           {notifications.length > 0 && (
             <button
-              onClick={() => markAllAsRead()}
+              onClick={() => allRead ? deleteAllNotifications() : markAllAsRead()}
               className="text-sm font-medium text-primary transition-colors hover:text-opacity-80"
             >
-              Tandai semua dibaca
+              {allRead ? "Hapus semua notifikasi" : "Tandai semua dibaca"}
             </button>
           )}
         </div>

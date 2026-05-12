@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Body,
   Param,
   UseGuards,
@@ -65,6 +66,15 @@ export class NotificationsController {
     return {
       success: true,
       message: 'All notifications marked as read',
+    };
+  }
+
+  @Delete()
+  async deleteAll(@Request() req: { user: { sub: string; role: string } }) {
+    await this.notificationsService.deleteAll(req.user.sub, req.user.role);
+    return {
+      success: true,
+      message: 'All notifications deleted',
     };
   }
 

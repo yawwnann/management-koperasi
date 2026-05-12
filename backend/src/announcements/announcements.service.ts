@@ -72,7 +72,9 @@ export class AnnouncementsService {
       data: {
         ...(dto.title !== undefined && { title: dto.title }),
         ...(dto.message !== undefined && { message: dto.message }),
-        ...(dto.startDate !== undefined && { startDate: new Date(dto.startDate) }),
+        ...(dto.startDate !== undefined && {
+          startDate: new Date(dto.startDate),
+        }),
         ...(dto.endDate !== undefined && { endDate: new Date(dto.endDate) }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
       },

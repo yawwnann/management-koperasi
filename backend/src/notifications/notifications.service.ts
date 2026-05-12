@@ -82,6 +82,22 @@ export class NotificationsService {
     }
   }
 
+  async deleteAll(userId: string, role: string) {
+    if (role === 'ADMIN') {
+      await this.prisma.notification.deleteMany({
+        where: {
+          OR: [{ userId }, { isAdmin: true }],
+        },
+      });
+    } else {
+      await this.prisma.notification.deleteMany({
+        where: {
+          OR: [{ userId }, { userId: null, isAdmin: false }],
+        },
+      });
+    }
+  }
+
   async getUnreadCount(userId: string, role: string): Promise<number> {
     const where: any = { isRead: false };
 
