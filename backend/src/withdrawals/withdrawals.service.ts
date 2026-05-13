@@ -368,21 +368,30 @@ export class WithdrawalsService {
 
     const totalAmount = Number(saving.total);
     if (totalAmount <= 0) {
-      throw new BadRequestException('No sufficient balance available to withdraw.');
+      throw new BadRequestException(
+        'No sufficient balance available to withdraw.',
+      );
     }
 
     // Build breakdown summary
     const breakdownParts: string[] = [];
     if (breakdown.Pokok > 0)
-      breakdownParts.push(`Pokok: Rp${breakdown.Pokok.toLocaleString('id-ID')}`);
+      breakdownParts.push(
+        `Pokok: Rp${breakdown.Pokok.toLocaleString('id-ID')}`,
+      );
     if (breakdown.Wajib > 0)
-      breakdownParts.push(`Wajib: Rp${breakdown.Wajib.toLocaleString('id-ID')}`);
+      breakdownParts.push(
+        `Wajib: Rp${breakdown.Wajib.toLocaleString('id-ID')}`,
+      );
     if (breakdown.Sukarela > 0)
-      breakdownParts.push(`Sukarela: Rp${breakdown.Sukarela.toLocaleString('id-ID')}`);
+      breakdownParts.push(
+        `Sukarela: Rp${breakdown.Sukarela.toLocaleString('id-ID')}`,
+      );
 
-    const fullReason = breakdownParts.length > 0
-      ? `${reason || 'Lulus / Penarikan Semua'} (${breakdownParts.join(', ')})`
-      : reason || 'Lulus / Penarikan Semua';
+    const fullReason =
+      breakdownParts.length > 0
+        ? `${reason || 'Lulus / Penarikan Semua'} (${breakdownParts.join(', ')})`
+        : reason || 'Lulus / Penarikan Semua';
 
     // Create separate withdrawals for each saving type with balance > 0
     const withdrawals: any[] = [];

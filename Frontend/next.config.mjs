@@ -35,6 +35,18 @@ const nextConfig = {
         protocol: "https",
         hostname: "res.cloudinary.com",
         port: ""
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "3000",
+        pathname: "/uploads/**"
+      },
+      {
+        protocol: "https",
+        hostname: "**.your-vps-domain.com",
+        port: "",
+        pathname: "/uploads/**"
       }
     ]
   }

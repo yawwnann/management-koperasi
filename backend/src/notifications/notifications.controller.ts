@@ -92,11 +92,9 @@ export class NotificationsController {
 
   @Post('custom')
   @Roles('ADMIN')
-  async createCustom(
-    @Body() dto: CreateCustomNotificationDto,
-  ) {
+  async createCustom(@Body() dto: CreateCustomNotificationDto) {
     const isBroadcast = !dto.targetUserId;
-    
+
     // Create DB record
     const notification = await this.notificationsService.create({
       type: 'system',
@@ -121,8 +119,8 @@ export class NotificationsController {
     return {
       success: true,
       data: notification,
-      message: isBroadcast 
-        ? 'Notification broadcasted to all users' 
+      message: isBroadcast
+        ? 'Notification broadcasted to all users'
         : 'Notification sent to user',
     };
   }

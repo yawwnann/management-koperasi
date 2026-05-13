@@ -15,7 +15,7 @@ import { WithdrawalsModule } from './withdrawals/withdrawals.module';
 import { SavingsModule } from './savings/savings.module';
 import { ReportsModule } from './reports/reports.module';
 import { CommonModule } from './common/common.module';
-import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { StorageModule } from './storage/storage.module';
 import { EmailModule } from './email/email.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { DashboardModule } from './dashboard/dashboard.module';
@@ -36,7 +36,7 @@ import { AnnouncementsModule } from './announcements/announcements.module';
     WithdrawalsModule,
     SavingsModule,
     ReportsModule,
-    CloudinaryModule,
+    StorageModule,
     EmailModule,
     NotificationsModule,
     DashboardModule,

@@ -16,7 +16,7 @@ import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { ApprovePaymentDto } from './dto/approve-payment.dto';
 import { Roles } from '../common/decorators/roles.decorator';
-import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { StorageService } from '../storage/storage.service';
 
 interface JwtRequest extends Request {
   user: {
@@ -31,7 +31,7 @@ interface JwtRequest extends Request {
 export class PaymentsController {
   constructor(
     private paymentsService: PaymentsService,
-    private cloudinaryService: CloudinaryService,
+    private storageService: StorageService,
   ) {}
 
   @Post()
@@ -46,8 +46,8 @@ export class PaymentsController {
       throw new BadRequestException('Proof image is required');
     }
 
-    // Upload proof image to Cloudinary
-    const uploadResult = await this.cloudinaryService.uploadImage(file);
+    // Upload proof image to local storage
+    const url = await this.storageService.saveFile(file, 'proofs');
 
     // Convert nominal to number if it comes as string
     createPaymentDto.nominal = parseFloat(
@@ -57,7 +57,7 @@ export class PaymentsController {
     const payment = await this.paymentsService.create(
       req.user.sub,
       createPaymentDto,
-      uploadResult.url, // Save the Cloudinary URL to database
+      url, // Save the local URL to database
     );
 
     return {

@@ -16,7 +16,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Roles } from '../common/decorators/roles.decorator';
-import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { StorageService } from '../storage/storage.service';
 
 interface JwtRequest extends Request {
   user: {
@@ -31,7 +31,7 @@ interface JwtRequest extends Request {
 export class UsersController {
   constructor(
     private usersService: UsersService,
-    private cloudinaryService: CloudinaryService,
+    private storageService: StorageService,
   ) {}
 
   /**
@@ -51,8 +51,8 @@ export class UsersController {
     @Request() req: JwtRequest,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const uploadResult = await this.cloudinaryService.uploadImage(file);
-    return this.usersService.updatePhoto(req.user.sub, uploadResult.url);
+    const url = await this.storageService.saveFile(file, 'profiles');
+    return this.usersService.updatePhoto(req.user.sub, url);
   }
 
   /**
@@ -109,8 +109,8 @@ export class UsersController {
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const uploadResult = await this.cloudinaryService.uploadImage(file);
-    return this.usersService.updatePhoto(id, uploadResult.url);
+    const url = await this.storageService.saveFile(file, 'profiles');
+    return this.usersService.updatePhoto(id, url);
   }
 
   /**
@@ -121,10 +121,7 @@ export class UsersController {
   async deletePhoto(@Param('id') id: string) {
     const user = await this.usersService.findOne(id);
     if (user.photo) {
-      const publicId = this.cloudinaryService.extractPublicId(user.photo);
-      if (publicId) {
-        await this.cloudinaryService.deleteImage(publicId);
-      }
+      await this.storageService.deleteFile(user.photo);
     }
     return this.usersService.updatePhoto(id, null);
   }

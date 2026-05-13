@@ -3,12 +3,14 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import { join } from 'path';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 // Load environment variables
 dotenv.config();
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Enable cookie parser
   app.use(cookieParser());
@@ -24,6 +26,12 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     exposedHeaders: ['Set-Cookie'],
+  });
+
+  // Serve uploaded files as static assets
+  const uploadPath = process.env.UPLOAD_PATH || './uploads';
+  app.useStaticAssets(join(__dirname, '..', uploadPath), {
+    prefix: '/uploads',
   });
 
   // Global validation pipe

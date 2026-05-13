@@ -180,7 +180,8 @@ export class DashboardService {
       (p.description || '').toLowerCase().includes('wajib'),
     );
     const latestWajib = wajibPayments.sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     )[0];
 
     const referenceDate = latestWajib
@@ -191,7 +192,7 @@ export class DashboardService {
 
     const diffTime = Math.abs(new Date().getTime() - referenceDate.getTime());
     const diffMonths = diffTime / (1000 * 60 * 60 * 24 * 30); // Approximate months
-    
+
     if (diffMonths >= 5) {
       pemutihanAlert = {
         status: true,

@@ -1,20 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
-import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { StorageService } from '../storage/storage.service';
 import { BadRequestException } from '@nestjs/common';
 
 describe('PaymentsController', () => {
   let controller: PaymentsController;
   let paymentsService: PaymentsService;
-  let cloudinaryService: CloudinaryService;
+  let storageService: StorageService;
 
   const mockPaymentsService = {
     create: jest.fn(),
   };
 
-  const mockCloudinaryService = {
-    uploadImage: jest.fn(),
+  const mockStorageService = {
+    saveFile: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -26,15 +26,15 @@ describe('PaymentsController', () => {
           useValue: mockPaymentsService,
         },
         {
-          provide: CloudinaryService,
-          useValue: mockCloudinaryService,
+          provide: StorageService,
+          useValue: mockStorageService,
         },
       ],
     }).compile();
 
     controller = module.get<PaymentsController>(PaymentsController);
     paymentsService = module.get<PaymentsService>(PaymentsService);
-    cloudinaryService = module.get<CloudinaryService>(CloudinaryService);
+    storageService = module.get<StorageService>(StorageService);
   });
 
   afterEach(() => {
@@ -67,16 +67,13 @@ describe('PaymentsController', () => {
         paymentMethod: 'Cash',
       };
 
-      const mockUploadResult = {
-        url: 'https://cloudinary.com/image.jpg',
-        public_id: 'test-id',
-      };
+      const mockUrl = '/uploads/proofs/test-uuid.jpg';
 
       const mockPayment = {
         id: 'payment-123',
         userId: 'user-123',
         nominal: 100000,
-        proofImage: mockUploadResult.url,
+        proofImage: mockUrl,
         description: 'Test payment',
         paymentMethod: 'Cash',
         status: 'PENDING',
@@ -88,7 +85,7 @@ describe('PaymentsController', () => {
         },
       };
 
-      mockCloudinaryService.uploadImage.mockResolvedValue(mockUploadResult);
+      mockStorageService.saveFile.mockResolvedValue(mockUrl);
       mockPaymentsService.create.mockResolvedValue(mockPayment);
 
       const result = await controller.create(
@@ -97,7 +94,7 @@ describe('PaymentsController', () => {
         mockFile,
       );
 
-      expect(cloudinaryService.uploadImage).toHaveBeenCalledWith(mockFile);
+      expect(storageService.saveFile).toHaveBeenCalledWith(mockFile, 'proofs');
       expect(paymentsService.create).toHaveBeenCalledWith(
         'user-123',
         expect.objectContaining({
@@ -105,7 +102,7 @@ describe('PaymentsController', () => {
           description: 'Test payment',
           paymentMethod: 'Cash',
         }),
-        mockUploadResult.url,
+        mockUrl,
       );
       expect(result).toEqual({
         message: 'Payment submitted successfully',
@@ -119,12 +116,9 @@ describe('PaymentsController', () => {
         paymentMethod: 'QRIS',
       };
 
-      const mockUploadResult = {
-        url: 'https://cloudinary.com/qris-proof.jpg',
-        public_id: 'qris-id',
-      };
+      const mockUrl = '/uploads/proofs/test-uuid.jpg';
 
-      mockCloudinaryService.uploadImage.mockResolvedValue(mockUploadResult);
+      mockStorageService.saveFile.mockResolvedValue(mockUrl);
       mockPaymentsService.create.mockResolvedValue({
         id: 'payment-456',
         paymentMethod: 'QRIS',
@@ -137,7 +131,7 @@ describe('PaymentsController', () => {
         expect.objectContaining({
           paymentMethod: 'QRIS',
         }),
-        mockUploadResult.url,
+        mockUrl,
       );
     });
 
@@ -147,12 +141,9 @@ describe('PaymentsController', () => {
         paymentMethod: 'BankTransfer',
       };
 
-      const mockUploadResult = {
-        url: 'https://cloudinary.com/transfer-proof.jpg',
-        public_id: 'transfer-id',
-      };
+      const mockUrl = '/uploads/proofs/test-uuid.jpg';
 
-      mockCloudinaryService.uploadImage.mockResolvedValue(mockUploadResult);
+      mockStorageService.saveFile.mockResolvedValue(mockUrl);
       mockPaymentsService.create.mockResolvedValue({
         id: 'payment-789',
         paymentMethod: 'BankTransfer',
@@ -165,7 +156,7 @@ describe('PaymentsController', () => {
         expect.objectContaining({
           paymentMethod: 'BankTransfer',
         }),
-        mockUploadResult.url,
+        mockUrl,
       );
     });
 
