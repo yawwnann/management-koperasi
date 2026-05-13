@@ -195,30 +195,19 @@ async function main() {
 
   const users = [];
 
-  // Create Admin users (3 admins)
-  const adminCount = 3;
-  for (let i = 0; i < adminCount; i++) {
-    const firstName = firstNames[i];
-    const lastName = lastNames[i];
-    const name = `${firstName} ${lastName}`;
-    const email = `admin${i + 1}@kopma.com`;
-    const password = await hashPassword('admin123');
-
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password,
-        role: 'ADMIN',
-        angkatan: angkatan[Math.floor(Math.random() * angkatan.length)],
-        photo:
-          i === 0 ? 'https://placehold.co/150x150/5750F1/ffffff?text=AP' : null,
-        isActive: true,
-      },
-    });
-    users.push(user);
-    console.log(`   ✓ Created Admin: ${email}`);
-  }
+  // Create Admin user (1 admin)
+  const adminPassword = await hashPassword('admin123');
+  const admin = await prisma.user.create({
+    data: {
+      name: 'Yayang A. W. N.',
+      email: 'yawwnan01@gmail.com',
+      password: adminPassword,
+      role: 'ADMIN',
+      isActive: true,
+    },
+  });
+  users.push(admin);
+  console.log(`   ✓ Created Admin: yawwnan01@gmail.com`);
 
   // Create Anggota users (50 members)
   const anggotaCount = 50;
@@ -253,7 +242,7 @@ async function main() {
     users.push(user);
   }
   console.log(
-    `   ✓ Created ${adminCount} admins and ${anggotaCount} members\n`,
+    `   ✓ Created 1 admin and ${anggotaCount} members\n`,
   );
 
   // ==================== CREATE SAVINGS ====================
@@ -424,10 +413,8 @@ async function main() {
 
   console.log('🔐 Default Login Credentials:');
   console.log('═'.repeat(50));
-  console.log('   Admin 1: admin1@kopma.com / admin123');
-  console.log('   Admin 2: admin2@kopma.com / admin123');
-  console.log('   Admin 3: admin3@kopma.com / admin123');
-  console.log('   Member:  user1@kopma.com / [NIM as password]');
+  console.log('   Admin:  yawwnan01@gmail.com / admin123');
+  console.log('   Member: user1@kopma.com / [NIM as password]');
   console.log(
     '   (Password for anggota = their NIM, e.g., 2025001, 2025002, etc.)',
   );
