@@ -50,7 +50,7 @@ export function Sidebar() {
           "overflow-hidden border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-dark",
           isMobile
             ? "fixed bottom-0 left-0 top-0 z-50 w-[290px] transition-transform duration-300 ease-linear"
-            : "sticky top-0 h-screen w-[290px] shrink-0",
+            : "fixed left-0 top-0 z-40 h-screen w-[290px] shrink-0",
           !isOpen && isMobile && "-translate-x-full",
         )}
         aria-label="Main navigation"
