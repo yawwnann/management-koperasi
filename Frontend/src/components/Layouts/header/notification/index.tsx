@@ -61,9 +61,8 @@ export function Notification() {
   };
 
   const getNotificationUrl = (notification: any): string => {
-    if (notification.type === 'payment' || notification.type === 'withdrawal') {
-      return '/admin/verifikasi-pembayaran';
-    }
+    if (notification.type === 'payment') return '/admin/verifikasi-pembayaran';
+    if (notification.type === 'withdrawal') return '/admin/verifikasi-penarikan';
     return notification.actionUrl || '#';
   };
 
