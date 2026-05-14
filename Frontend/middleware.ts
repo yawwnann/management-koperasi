@@ -25,6 +25,9 @@ export function middleware(request: NextRequest) {
   const authToken = request.cookies.get('auth_token')?.value || 
                     request.headers.get('x-auth-token');
   
+  // Check for refresh_token cookie as fallback (means user was logged in)
+  const hasRefreshToken = !!request.cookies.get('refresh_token')?.value;
+  
   // If it's a public path, allow access
   if (isPublicPath) {
     // If user is already authenticated and trying to access login, redirect to home
@@ -36,6 +39,12 @@ export function middleware(request: NextRequest) {
   
   // If it's not a protected path (e.g., static files, api routes), allow access
   if (!isProtectedPath) {
+    return NextResponse.next();
+  }
+  
+  // If no auth_token but refresh_token exists, let request through
+  // Client-side will attempt silent refresh
+  if (!authToken && hasRefreshToken) {
     return NextResponse.next();
   }
   

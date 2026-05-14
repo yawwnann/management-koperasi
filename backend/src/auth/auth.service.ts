@@ -100,6 +100,7 @@ export class AuthService {
     const { token: refresh_token } = await this.refreshTokenService.createToken(
       user.id,
       userAgent,
+      loginDto.rememberMe,
     );
 
     return {

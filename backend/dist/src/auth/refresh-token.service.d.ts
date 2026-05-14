@@ -14,7 +14,7 @@ export declare class RefreshTokenService {
     private readonly refreshTokenSecret;
     private readonly refreshTokenExpiresIn;
     constructor(prisma: PrismaService, jwtService: JwtService, configService: ConfigService);
-    createToken(userId: string, userAgent?: string): Promise<{
+    createToken(userId: string, userAgent?: string, rememberMe?: boolean): Promise<{
         token: string;
         tokenId: string;
     }>;

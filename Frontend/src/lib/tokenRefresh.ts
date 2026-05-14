@@ -4,11 +4,36 @@
  */
 
 import { authApi } from './api';
-import { isAuthenticated, isTokenExpiringSoon, getAuthToken, clearAuth } from './authUtils';
+import { isAuthenticated, isTokenExpiringSoon, getAuthToken, clearAuth, getCurrentUser } from './authUtils';
 
 let refreshPromise: Promise<any> | null = null;
 let refreshTimer: NodeJS.Timeout | null = null;
 let isRefreshing = false;
+
+/**
+ * Attempt silent refresh on page load when auth_token is missing but
+ * middleware let us through (refresh_token cookie exists).
+ */
+export const attemptSilentRefresh = async (): Promise<boolean> => {
+  // Don't try if already authenticated
+  if (isAuthenticated()) {
+    return true;
+  }
+
+  // Try to get a new access token using the refresh token cookie
+  console.log('Attempting silent token refresh...');
+  try {
+    const result = await authApi.refresh();
+    if (result?.success) {
+      console.log('Silent refresh successful');
+      return true;
+    }
+    return false;
+  } catch {
+    console.log('Silent refresh failed (no valid session)');
+    return false;
+  }
+};
 
 /**
  * Initialize automatic token refresh
@@ -45,7 +70,6 @@ export const stopTokenRefresh = (): void => {
  * Check if token needs refresh and refresh it
  */
 export const checkAndRefreshToken = async (): Promise<boolean> => {
-  // Don't refresh if not authenticated
   if (!isAuthenticated()) {
     return false;
   }

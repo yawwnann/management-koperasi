@@ -43,8 +43,12 @@ export class RefreshTokenService {
   async createToken(
     userId: string,
     userAgent?: string,
+    rememberMe?: boolean,
   ): Promise<{ token: string; tokenId: string }> {
     const tokenId = crypto.randomUUID();
+
+    // Use shorter expiration if rememberMe is false
+    const expiresIn = rememberMe !== false ? this.refreshTokenExpiresIn : '1d';
 
     // Sign the refresh token with separate secret
     const token = this.jwtService.sign(
@@ -54,13 +58,13 @@ export class RefreshTokenService {
       },
       {
         secret: this.refreshTokenSecret,
-        expiresIn: '30d',
+        expiresIn: expiresIn as any,
       },
     );
 
     // Calculate expiration time
     const expiresAt = new Date();
-    const expiresInMs = this.parseExpiresIn(this.refreshTokenExpiresIn);
+    const expiresInMs = this.parseExpiresIn(expiresIn);
     expiresAt.setTime(expiresAt.getTime() + expiresInMs);
 
     // Store in database

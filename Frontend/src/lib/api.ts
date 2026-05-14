@@ -10,7 +10,7 @@ import { ApiResponse } from "@/types/api.types";
 // ==================== AUTH ====================
 
 export const authApi = {
-  login: async (email: string, password: string): Promise<ApiResponse> => {
+  login: async (email: string, password: string, remember?: boolean): Promise<ApiResponse> => {
     // Call login endpoint directly with credentials to receive refresh token cookie
     const baseUrl =
       process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api";
@@ -21,7 +21,7 @@ export const authApi = {
           "Content-Type": "application/json",
         },
         credentials: "include", // Important: receives refresh token cookie
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, rememberMe: remember }),
       });
 
       if (!response.ok) {

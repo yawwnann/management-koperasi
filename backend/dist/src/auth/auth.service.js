@@ -121,7 +121,7 @@ let AuthService = class AuthService {
             name: user.name,
         };
         const access_token = await this.jwtService.signAsync(payload);
-        const { token: refresh_token } = await this.refreshTokenService.createToken(user.id, userAgent);
+        const { token: refresh_token } = await this.refreshTokenService.createToken(user.id, userAgent, loginDto.rememberMe);
         return {
             access_token,
             refresh_token,

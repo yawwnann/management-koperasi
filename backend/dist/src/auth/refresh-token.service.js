@@ -69,17 +69,18 @@ let RefreshTokenService = class RefreshTokenService {
                 process.env.REFRESH_TOKEN_EXPIRES_IN ||
                 '30d';
     }
-    async createToken(userId, userAgent) {
+    async createToken(userId, userAgent, rememberMe) {
         const tokenId = crypto.randomUUID();
+        const expiresIn = rememberMe !== false ? this.refreshTokenExpiresIn : '1d';
         const token = this.jwtService.sign({
             sub: userId,
             jti: tokenId,
         }, {
             secret: this.refreshTokenSecret,
-            expiresIn: '30d',
+            expiresIn: expiresIn,
         });
         const expiresAt = new Date();
-        const expiresInMs = this.parseExpiresIn(this.refreshTokenExpiresIn);
+        const expiresInMs = this.parseExpiresIn(expiresIn);
         expiresAt.setTime(expiresAt.getTime() + expiresInMs);
         await this.prisma.refreshToken.create({
             data: {

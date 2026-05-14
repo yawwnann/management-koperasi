@@ -36,11 +36,14 @@ let AuthController = class AuthController {
             'unknown';
         const result = await this.authService.login(loginDto, userAgent, ipAddress);
         const cookieName = process.env.REFRESH_TOKEN_COOKIE_NAME || 'refresh_token';
+        const maxAge = loginDto.rememberMe
+            ? 30 * 24 * 60 * 60 * 1000
+            : 24 * 60 * 60 * 1000;
         res.cookie(cookieName, result.refresh_token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-            maxAge: 30 * 24 * 60 * 60 * 1000,
+            maxAge,
             path: '/',
         });
         const { refresh_token, ...responseWithoutRefreshToken } = result;

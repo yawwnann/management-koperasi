@@ -31,7 +31,7 @@ export default function SigninWithPassword() {
     setError("");
 
     try {
-      const response = await authApi.login(data.email, data.password);
+      const response = await authApi.login(data.email, data.password, data.remember);
 
       if (response.success) {
         router.push("/");

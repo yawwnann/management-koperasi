@@ -50,11 +50,14 @@ export class AuthController {
 
     // Set refresh token as httpOnly cookie
     const cookieName = process.env.REFRESH_TOKEN_COOKIE_NAME || 'refresh_token';
+    const maxAge = loginDto.rememberMe
+      ? 30 * 24 * 60 * 60 * 1000   // 30 days if rememberMe
+      : 24 * 60 * 60 * 1000;        // 1 day if not
     res.cookie(cookieName, result.refresh_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
+      maxAge,
       path: '/',
     });
 
