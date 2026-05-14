@@ -60,6 +60,13 @@ export function Notification() {
     }
   };
 
+  const getNotificationUrl = (notification: any): string => {
+    if (notification.type === 'payment' || notification.type === 'withdrawal') {
+      return '/admin/verifikasi-pembayaran';
+    }
+    return notification.actionUrl || '#';
+  };
+
   const handleNotificationClick = async (id: string) => {
     await markAsRead(id);
     setIsOpen(false);
@@ -132,7 +139,7 @@ export function Notification() {
             notifications.slice(0, 10).map((notification) => (
               <li key={notification.id} role="menuitem">
                 <Link
-                  href={notification.actionUrl || "#"}
+                  href={getNotificationUrl(notification)}
                   onClick={() => handleNotificationClick(notification.id)}
                   className={`flex gap-3.5 rounded-xl p-3 outline-none transition-all hover:bg-gray-2 focus-visible:bg-gray-2 dark:hover:bg-dark-3 dark:focus-visible:bg-dark-3 ${
                     !notification.isRead
