@@ -8,7 +8,12 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "cdn.sanity.io",
+        hostname: "placehold.co",
+        port: ""
+      },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
         port: ""
       },
       {
@@ -20,27 +25,6 @@ const nextConfig = {
         protocol: "https",
         hostname: "avatars.githubusercontent.com",
         port: ""
-      },
-      {
-        protocol: "https",
-        hostname: "pub-b7fd9c30cdbf439183b75041f5f71b92.r2.dev",
-        port: ""
-      },
-      {
-        protocol: "https",
-        hostname: "placehold.co",
-        port: ""
-      },
-      {
-        protocol: "https",
-        hostname: "res.cloudinary.com",
-        port: ""
-      },
-      {
-        protocol: "http",
-        hostname: "localhost",
-        port: "3000",
-        pathname: "/uploads/**"
       },
       {
         protocol: "https",

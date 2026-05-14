@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Public paths that don't require authentication
-const PUBLIC_PATHS = ['/auth/login', '/auth/forgot-password', '/auth/reset-password'];
+const PUBLIC_PATHS = ['/auth/sign-in', '/auth/forgot-password', '/auth/reset-password'];
 
 // Paths that should redirect to login if not authenticated
 const PROTECTED_PATHS = ['/', '/admin', '/saldo', '/laporan', '/pengaturan', '/members'];
@@ -28,7 +28,7 @@ export function middleware(request: NextRequest) {
   // If it's a public path, allow access
   if (isPublicPath) {
     // If user is already authenticated and trying to access login, redirect to home
-    if (pathname === '/auth/login' && authToken) {
+    if (pathname === '/auth/sign-in' && authToken) {
       return NextResponse.redirect(new URL('/', request.url));
     }
     return NextResponse.next();
@@ -41,7 +41,7 @@ export function middleware(request: NextRequest) {
   
   // If it's a protected path and no auth token, redirect to login
   if (!authToken) {
-    const loginUrl = new URL('/auth/login', request.url);
+    const loginUrl = new URL('/auth/sign-in', request.url);
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
