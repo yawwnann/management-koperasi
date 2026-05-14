@@ -18,8 +18,6 @@
 /Frontend/.next/
 /Frontend/out/
 
-# backend build output (NestJS)
-#/backend/dist/
 
 # production/build output
 /build/
