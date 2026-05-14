@@ -402,8 +402,8 @@ function AnggotaContent() {
             {searchQuery && `dari ${members.length}`}
           </p>
         </div>
-        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
-          <div className="relative">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <div className="relative w-full sm:w-auto">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
               <svg
                 className="h-4 w-4"
@@ -432,7 +432,7 @@ function AnggotaContent() {
           </div>
           <Link
             href="/admin/anggota/tunggakan"
-            className="inline-flex flex-shrink-0 items-center justify-center rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
+            className="inline-flex w-full items-center justify-center whitespace-nowrap rounded-lg border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 sm:w-auto"
           >
             <svg
               className="mr-2 h-4 w-4"
@@ -451,7 +451,7 @@ function AnggotaContent() {
           </Link>
           <button
             onClick={openCreateModal}
-            className="inline-flex flex-shrink-0 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90"
+            className="inline-flex w-full items-center justify-center whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary/90 sm:w-auto"
           >
             <svg
               className="mr-2 h-4 w-4"

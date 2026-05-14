@@ -40,10 +40,10 @@ export function Header() {
   }, [pathname]);
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between border-b border-stroke bg-white px-4 py-5 shadow-1 dark:border-stroke-dark dark:bg-gray-dark md:px-5 2xl:px-10">
+    <header className="sticky top-0 z-30 flex w-full max-w-full items-center justify-between overflow-x-clip border-b border-stroke bg-white px-3 py-3 shadow-1 dark:border-stroke-dark dark:bg-gray-dark sm:px-4 md:px-5 2xl:px-10">
       <button
         onClick={toggleSidebar}
-        className="rounded-lg border px-1.5 py-1 dark:border-stroke-dark dark:bg-[#020D1A] hover:dark:bg-[#FFFFFF1A] min-[850px]:hidden"
+        className="shrink-0 rounded-lg border px-1.5 py-1 dark:border-stroke-dark dark:bg-[#020D1A] hover:dark:bg-[#FFFFFF1A] min-[850px]:hidden"
       >
         <MenuIcon />
         <span className="sr-only">Toggle Sidebar</span>
@@ -52,7 +52,7 @@ export function Header() {
       {isMobile && (
         <Link
           href={"/"}
-          className="ml-2 flex items-center gap-2 max-[430px]:hidden min-[375px]:ml-4"
+          className="ml-2 flex shrink-0 items-center gap-2 max-[430px]:hidden min-[375px]:ml-4"
         >
           <Image
             src={"/new-logo.PNG"}
@@ -91,8 +91,10 @@ export function Header() {
         </p>
       </div>
 
-      <div className="flex flex-1 items-center justify-end gap-2 min-[375px]:gap-4">
-        <ThemeToggleSwitch />
+      <div className="flex min-w-0 items-center justify-end gap-2 min-[375px]:gap-3">
+        <div className="hidden min-[390px]:block">
+          <ThemeToggleSwitch />
+        </div>
 
         <Notification />
 

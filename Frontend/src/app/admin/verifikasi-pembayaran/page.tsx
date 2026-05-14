@@ -281,11 +281,11 @@ function VerifikasiPembayaranContent() {
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="rounded-xl border border-stroke bg-white p-5 shadow-sm dark:border-strokedark dark:bg-boxdark"
+            className="rounded-xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark sm:p-5"
           >
             <div className="flex items-start justify-between">
               <div>
@@ -309,8 +309,8 @@ function VerifikasiPembayaranContent() {
       {/* Tabs & Table */}
       <div className="rounded-xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark">
         {/* Tabs */}
-        <div className="border-b border-stroke px-6 pt-6 dark:border-strokedark">
-          <div className="flex flex-wrap gap-2">
+        <div className="border-b border-stroke px-4 pt-4 dark:border-strokedark sm:px-6 sm:pt-6">
+          <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
@@ -318,7 +318,7 @@ function VerifikasiPembayaranContent() {
                   setStatusFilter(tab.key as StatusFilter);
                   setPage(1);
                 }}
-                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
+                className={`flex flex-shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
                   statusFilter === tab.key
                     ? "bg-primary text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
