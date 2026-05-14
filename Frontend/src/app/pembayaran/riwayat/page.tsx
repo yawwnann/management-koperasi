@@ -5,6 +5,7 @@ import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import { ProtectedRoute } from "@/components/protected-route";
 import { paymentsApi } from "@/lib/api";
 import { formatDate } from "@/lib/api-helpers";
+import { getImageUrl } from "@/lib/getImageUrl";
 import type { Payment } from "@/types/api.types";
 
 type StatusFilter = "ALL" | "PENDING" | "APPROVED" | "REJECTED";
@@ -620,7 +621,7 @@ function RiwayatPembayaranContent() {
                     </p>
                     <div className="rounded-lg border border-stroke p-2 dark:border-strokedark">
                       <img
-                        src={selectedPayment.proofImage}
+                        src={getImageUrl(selectedPayment.proofImage)}
                         alt="Bukti pembayaran"
                         className="max-h-64 w-full rounded-lg object-contain"
                       />

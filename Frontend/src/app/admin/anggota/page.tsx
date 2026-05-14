@@ -10,6 +10,7 @@ import {
   withdrawalsApi,
   savingsApi,
 } from "@/lib/api";
+import { getImageUrl } from "@/lib/getImageUrl";
 import type {
   User,
   FakultasData,
@@ -569,7 +570,7 @@ function AnggotaContent() {
                       <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-primary/10">
                         {member.photo ? (
                           <img
-                            src={member.photo}
+                            src={getImageUrl(member.photo)}
                             alt={member.name}
                             className="h-full w-full object-cover"
                           />
@@ -1055,7 +1056,7 @@ function AnggotaContent() {
                       <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-primary/10">
                         {selectedUser.photo ? (
                           <img
-                            src={selectedUser.photo}
+                            src={getImageUrl(selectedUser.photo)}
                             alt={selectedUser.name}
                             className="h-full w-full object-cover"
                           />

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ProtectedRoute } from "@/components/protected-route";
 import { usersApi } from "@/lib/api";
+import { getImageUrl } from "@/lib/getImageUrl";
 import { User as UserIcon, AlertTriangle } from "lucide-react";
 
 interface DelinquentUser {
@@ -297,7 +298,7 @@ function TunggakanContent() {
                       <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-primary/10">
                         {user.photo ? (
                           <img
-                            src={user.photo}
+                            src={getImageUrl(user.photo)}
                             alt={user.name}
                             className="h-full w-full object-cover"
                           />

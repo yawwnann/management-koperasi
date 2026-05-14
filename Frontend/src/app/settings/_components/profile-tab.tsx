@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Cropper, { Area, Point } from "react-easy-crop";
 import { getCurrentUser } from "@/lib/api-helpers";
+import { getImageUrl } from "@/lib/getImageUrl";
 import { profileApi } from "@/lib/api";
 
 function createImage(url: string): Promise<HTMLImageElement> {
@@ -267,7 +268,7 @@ export function ProfileTab() {
             <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-primary/10">
               {user?.photo ? (
                 <img
-                  src={user.photo}
+                  src={getImageUrl(user.photo)}
                   alt={user.name}
                   className="h-full w-full object-cover"
                 />

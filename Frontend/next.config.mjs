@@ -44,7 +44,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "**.your-vps-domain.com",
+        hostname: "payment-api.kopmauad.com",
         port: "",
         pathname: "/uploads/**"
       }

@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown";
 import { authApi } from "@/lib/api";
 import { getCurrentUser } from "@/lib/api-helpers";
+import { getImageUrl } from "@/lib/getImageUrl";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
@@ -37,7 +38,7 @@ export function UserInfo() {
   const USER = {
     name: user?.name || "User",
     email: user?.email || "user@kopma.com",
-    img: user?.photo || "/images/user/user-03.png",
+    img: getImageUrl(user?.photo),
     role: user?.role || "ANGGOTA",
   };
 
@@ -51,8 +52,8 @@ export function UserInfo() {
       .slice(0, 2);
   };
 
-  // Check if user has a real photo (not the default placeholder)
-  const hasPhoto = user?.photo && user.photo !== "/images/user/user-03.png";
+  // Check if user has a real photo
+  const hasPhoto = !!user?.photo;
 
   const handleLogoutClick = () => {
     setIsOpen(false);

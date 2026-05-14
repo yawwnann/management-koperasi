@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ProtectedRoute } from "@/components/protected-route";
 import { paymentsApi } from "@/lib/api";
 import { formatDate } from "@/lib/api-helpers";
+import { getImageUrl } from "@/lib/getImageUrl";
 import {
   Check,
   X,
@@ -629,7 +630,7 @@ function VerifikasiPembayaranContent() {
                   </p>
                   <div className="overflow-hidden rounded-xl border border-stroke dark:border-strokedark">
                     <img
-                      src={selectedPayment.proofUrl}
+                      src={getImageUrl(selectedPayment.proofUrl)}
                       alt="Bukti pembayaran"
                       className="h-48 w-full object-cover"
                     />

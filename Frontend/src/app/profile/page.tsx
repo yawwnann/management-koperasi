@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { profileApi, savingsApi } from "@/lib/api";
+import { getImageUrl } from "@/lib/getImageUrl";
 import {
   Mail,
   Phone,
@@ -366,7 +367,7 @@ export default function ProfilePage() {
                 <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-primary/10 ring-4 ring-primary/20">
                   {data.photo ? (
                     <Image
-                      src={data.photo}
+                      src={getImageUrl(data.photo)}
                       alt={data.name}
                       width={112}
                       height={112}

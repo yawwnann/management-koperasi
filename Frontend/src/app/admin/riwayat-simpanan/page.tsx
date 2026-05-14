@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ProtectedRoute } from "@/components/protected-route";
 import { usersApi, savingsApi } from "@/lib/api";
+import { getImageUrl } from "@/lib/getImageUrl";
 import type {
   User,
   MandatorySavingRecord,
@@ -187,7 +188,7 @@ function RiwayatSimpananContent() {
             <div className="mt-4 flex flex-wrap items-center gap-3 rounded-lg border border-primary bg-primary/5 px-4 py-3 dark:border-primary/50 dark:bg-primary/10">
               <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-primary/10">
                 {selectedUser.photo ? (
-                  <img src={selectedUser.photo} alt={selectedUser.name} className="h-full w-full object-cover" />
+                  <img src={getImageUrl(selectedUser.photo)} alt={selectedUser.name} className="h-full w-full object-cover" />
                 ) : (
                   <UserIcon className="h-5 w-5 text-primary" />
                 )}
@@ -247,7 +248,7 @@ function RiwayatSimpananContent() {
                       >
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10">
                           {member.photo ? (
-                            <img src={member.photo} alt={member.name} className="h-full w-full object-cover" />
+                            <img src={getImageUrl(member.photo)} alt={member.name} className="h-full w-full object-cover" />
                           ) : (
                             <UserIcon className="h-4 w-4 text-primary" />
                           )}
@@ -285,7 +286,7 @@ function RiwayatSimpananContent() {
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
                 {selectedUser.photo ? (
                   <img
-                    src={selectedUser.photo}
+                    src={getImageUrl(selectedUser.photo)}
                     alt={selectedUser.name}
                     className="h-full w-full rounded-full object-cover"
                   />
