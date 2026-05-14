@@ -15,15 +15,19 @@ async function bootstrap() {
   // Enable cookie parser
   app.use(cookieParser());
 
-  // Enable CORS
+  // Enable CORS — supports comma-separated origins from FRONTEND_URL env
+  const corsOrigins = process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(',').map((u) => u.trim())
+    : [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://192.168.189.1:5173',
+        'https://management-koperasi.vercel.app',
+        'https://payment.kopmauad.com',
+      ];
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL || [
-      'http://localhost:5173',
-      'http://127.0.0.1:5173',
-      'http://192.168.189.1:5173',
-      'https://management-koperasi.vercel.app',
-      'https://payment.kopmauad.com',
-    ],
+    origin: corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
