@@ -295,54 +295,43 @@ let WithdrawalsService = class WithdrawalsService {
         const fullReason = breakdownParts.length > 0
             ? `${reason || 'Lulus / Penarikan Semua'} (${breakdownParts.join(', ')})`
             : reason || 'Lulus / Penarikan Semua';
-        const withdrawals = [];
-        const savingTypes = ['Pokok', 'Wajib', 'Sukarela'];
-        for (const type of savingTypes) {
-            const amount = breakdown[type];
-            if (amount > 0) {
-                const withdrawal = await this.prisma.withdrawal.create({
-                    data: {
-                        userId,
-                        nominal: new client_1.Prisma.Decimal(amount),
-                        reason: fullReason,
-                        savingType: type,
-                        paymentMethod: (paymentMethod || 'Cash'),
-                        status: 'PENDING',
-                    },
-                    include: {
-                        user: {
-                            select: { id: true, name: true, email: true },
-                        },
-                    },
-                });
-                withdrawals.push(withdrawal);
-            }
-        }
-        if (withdrawals.length > 0) {
-            const firstWithdrawal = withdrawals[0];
-            this.notificationsGateway.broadcastNewWithdrawal({
-                id: firstWithdrawal.id,
-                userId: firstWithdrawal.userId,
-                userName: firstWithdrawal.user.name,
-                amount: totalAmount,
+        const withdrawal = await this.prisma.withdrawal.create({
+            data: {
+                userId,
+                nominal: new client_1.Prisma.Decimal(totalAmount),
+                reason: fullReason,
+                savingType: 'Semua',
+                paymentMethod: (paymentMethod || 'Cash'),
                 status: 'PENDING',
-            });
-            await this.notificationsService.create({
-                type: 'withdrawal',
-                title: 'Penarikan Semua (Lulus)',
-                message: `${firstWithdrawal.user.name} mengajukan penarikan semua saldo sebesar Rp${totalAmount.toLocaleString('id-ID')} (${withdrawals.length} pengajuan)`,
-                actionUrl: `/admin/verifikasi-penarikan`,
-                isAdminNotification: true,
-            });
-            const admins = await this.prisma.user.findMany({
-                where: { role: 'ADMIN' },
-                select: { email: true },
-            });
-            for (const admin of admins) {
-                this.emailService.sendAdminWithdrawalNotification(admin.email, firstWithdrawal.user.name, totalAmount);
-            }
+            },
+            include: {
+                user: {
+                    select: { id: true, name: true, email: true },
+                },
+            },
+        });
+        this.notificationsGateway.broadcastNewWithdrawal({
+            id: withdrawal.id,
+            userId: withdrawal.userId,
+            userName: withdrawal.user.name,
+            amount: totalAmount,
+            status: 'PENDING',
+        });
+        await this.notificationsService.create({
+            type: 'withdrawal',
+            title: 'Penarikan Semua (Lulus)',
+            message: `${withdrawal.user.name} mengajukan penarikan semua saldo sebesar Rp${totalAmount.toLocaleString('id-ID')}`,
+            actionUrl: `/admin/verifikasi-penarikan`,
+            isAdminNotification: true,
+        });
+        const admins = await this.prisma.user.findMany({
+            where: { role: 'ADMIN' },
+            select: { email: true },
+        });
+        for (const admin of admins) {
+            this.emailService.sendAdminWithdrawalNotification(admin.email, withdrawal.user.name, totalAmount);
         }
-        return { success: true, withdrawals };
+        return { success: true, withdrawals: [withdrawal] };
     }
 };
 exports.WithdrawalsService = WithdrawalsService;

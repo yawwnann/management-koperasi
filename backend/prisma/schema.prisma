@@ -41,6 +41,7 @@ enum SavingType {
   Pokok
   Wajib
   Sukarela
+  Semua
 }
 
 enum MandatorySavingStatus {

@@ -94,6 +94,25 @@ export declare class WithdrawalsService {
     }>;
     withdrawAll(userId: string, reason: string, paymentMethod?: string): Promise<{
         success: boolean;
-        withdrawals: any[];
+        withdrawals: ({
+            user: {
+                email: string;
+                id: string;
+                name: string;
+            };
+        } & {
+            id: string;
+            createdAt: Date;
+            userId: string;
+            status: import("@prisma/client").$Enums.WithdrawalStatus;
+            updatedAt: Date;
+            nominal: Prisma.Decimal;
+            paymentMethod: import("@prisma/client").$Enums.WithdrawalPaymentMethod;
+            verifiedBy: string | null;
+            verifiedAt: Date | null;
+            reason: string;
+            savingType: import("@prisma/client").$Enums.SavingType;
+            rejectionReason: string | null;
+        })[];
     }>;
 }

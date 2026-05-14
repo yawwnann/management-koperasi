@@ -29,7 +29,26 @@ export declare class WithdrawalsController {
         paymentMethod?: string;
     }): Promise<{
         success: boolean;
-        withdrawals: any[];
+        withdrawals: ({
+            user: {
+                email: string;
+                id: string;
+                name: string;
+            };
+        } & {
+            id: string;
+            createdAt: Date;
+            userId: string;
+            status: import("@prisma/client").$Enums.WithdrawalStatus;
+            updatedAt: Date;
+            nominal: import("@prisma/client-runtime-utils").Decimal;
+            paymentMethod: import("@prisma/client").$Enums.WithdrawalPaymentMethod;
+            verifiedBy: string | null;
+            verifiedAt: Date | null;
+            reason: string;
+            savingType: import("@prisma/client").$Enums.SavingType;
+            rejectionReason: string | null;
+        })[];
     }>;
     findAll(req: any, userId?: string, startDate?: string, endDate?: string, status?: string): Promise<({
         user: {
