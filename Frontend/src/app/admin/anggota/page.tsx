@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ProtectedRoute } from "@/components/protected-route";
+import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import {
   usersApi,
   fakultasApi,
@@ -375,19 +376,7 @@ function AnggotaContent() {
 
   return (
     <div className="mx-auto">
-      {/* Breadcrumb - compact version without title */}
-      <div className="mb-6 flex items-center justify-between">
-        <nav className="flex items-center gap-2 text-sm">
-          <Link
-            href="/"
-            className="font-medium text-gray-500 hover:text-primary dark:text-gray-400"
-          >
-            Dashboard
-          </Link>
-          <span className="text-gray-400">/</span>
-          <span className="font-medium text-primary">Manajemen Anggota</span>
-        </nav>
-      </div>
+      <Breadcrumb pageName="Manajemen Anggota" />
 
       {/* Message */}
       {message && (

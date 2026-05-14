@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import { ProtectedRoute } from "@/components/protected-route";
+import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import { paymentsApi } from "@/lib/api";
 import { formatDate } from "@/lib/api-helpers";
 import { getImageUrl } from "@/lib/getImageUrl";
@@ -259,29 +259,7 @@ function VerifikasiPembayaranContent() {
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-dark dark:text-white">
-            Verifikasi Pembayaran
-          </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Kelola dan verifikasi pembayaran anggota koperasi
-          </p>
-        </div>
-        <nav className="flex items-center gap-2 text-sm">
-          <Link
-            href="/"
-            className="text-gray-500 hover:text-primary dark:text-gray-400"
-          >
-            Dashboard
-          </Link>
-          <span className="text-gray-400">/</span>
-          <span className="font-medium text-primary">
-            Verifikasi Pembayaran
-          </span>
-        </nav>
-      </div>
+      <Breadcrumb pageName="Verifikasi Pembayaran" />
 
       {/* Alert Message */}
       {message && (
