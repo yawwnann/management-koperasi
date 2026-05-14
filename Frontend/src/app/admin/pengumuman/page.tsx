@@ -3,7 +3,14 @@ import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import { ProtectedRoute } from "@/components/protected-route";
 import { useEffect, useState } from "react";
 import { announcementsApi } from "@/lib/api";
-import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, Megaphone } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  ToggleLeft,
+  ToggleRight,
+  Megaphone,
+} from "lucide-react";
 
 interface Announcement {
   id: string;
@@ -14,6 +21,9 @@ interface Announcement {
   isActive: boolean;
   creator?: { name: string };
   createdAt: string;
+}
+interface BreadcrumbProps {
+  pageName: string;
 }
 
 interface FormData {
@@ -47,7 +57,10 @@ function PengumumanContent() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   async function loadData() {
@@ -60,7 +73,9 @@ function PengumumanContent() {
     }
   }
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+  }, []);
 
   function openCreate() {
     setEditingId(null);
@@ -97,7 +112,12 @@ function PengumumanContent() {
         : await announcementsApi.create(payload);
 
       if (res.success) {
-        setMessage({ type: "success", text: editingId ? "Pengumuman berhasil diperbarui." : "Pengumuman berhasil dibuat." });
+        setMessage({
+          type: "success",
+          text: editingId
+            ? "Pengumuman berhasil diperbarui."
+            : "Pengumuman berhasil dibuat.",
+        });
         loadData();
         setTimeout(() => setShowModal(false), 1000);
       } else {
@@ -126,20 +146,34 @@ function PengumumanContent() {
   }
 
   const formatDate = (d: string) =>
-    new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+    new Date(d).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
 
   const isActive = (item: Announcement) => {
     const now = new Date();
-    return item.isActive && new Date(item.startDate) <= now && new Date(item.endDate) >= now;
+    return (
+      item.isActive &&
+      new Date(item.startDate) <= now &&
+      new Date(item.endDate) >= now
+    );
   };
 
   return (
     <div className="mx-auto">
       <div className="mb-6 flex items-center justify-between">
-        <Breadcrumb pageName="Manajemen Pengumuman" />
+        <div className="space-y-2">
+          <h2 className="text-[22px] font-bold leading-[28px] text-dark dark:text-white sm:text-[26px] sm:leading-[30px]">
+            Kelola Pemberitahuan
+          </h2>
+          <Breadcrumb pageName="Manajemen Pengumuman" />
+        </div>
+
         <button
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary/90 transition"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white transition hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" />
           Buat Pengumuman
@@ -178,21 +212,34 @@ function PengumumanContent() {
               </thead>
               <tbody>
                 {items.map((item) => (
-                  <tr key={item.id} className="border-b border-stroke last:border-0 hover:bg-gray-50 dark:border-strokedark dark:hover:bg-gray-800/30">
+                  <tr
+                    key={item.id}
+                    className="border-b border-stroke last:border-0 hover:bg-gray-50 dark:border-strokedark dark:hover:bg-gray-800/30"
+                  >
                     <td className="px-6 py-4">
-                      <p className="font-medium text-dark dark:text-white">{item.title}</p>
-                      <p className="mt-0.5 line-clamp-1 text-xs text-gray-500 dark:text-gray-400">{item.message}</p>
+                      <p className="font-medium text-dark dark:text-white">
+                        {item.title}
+                      </p>
+                      <p className="mt-0.5 line-clamp-1 text-xs text-gray-500 dark:text-gray-400">
+                        {item.message}
+                      </p>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
                       {formatDate(item.startDate)} — {formatDate(item.endDate)}
                     </td>
                     <td className="px-6 py-4">
                       {isActive(item) ? (
-                        <span className="inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">Aktif</span>
+                        <span className="inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                          Aktif
+                        </span>
                       ) : item.isActive ? (
-                        <span className="inline-flex rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">Terjadwal</span>
+                        <span className="inline-flex rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
+                          Terjadwal
+                        </span>
                       ) : (
-                        <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-400">Nonaktif</span>
+                        <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                          Nonaktif
+                        </span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
@@ -205,9 +252,11 @@ function PengumumanContent() {
                           title={item.isActive ? "Nonaktifkan" : "Aktifkan"}
                           className="rounded p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
-                          {item.isActive
-                            ? <ToggleRight className="h-5 w-5 text-primary" />
-                            : <ToggleLeft className="h-5 w-5" />}
+                          {item.isActive ? (
+                            <ToggleRight className="h-5 w-5 text-primary" />
+                          ) : (
+                            <ToggleLeft className="h-5 w-5" />
+                          )}
                         </button>
                         <button
                           onClick={() => openEdit(item)}
@@ -240,18 +289,24 @@ function PengumumanContent() {
             </h3>
 
             {message && (
-              <div className={`mb-4 rounded-lg p-3 text-sm ${message.type === "success" ? "bg-blue-50 text-blue-700" : "bg-red-50 text-red-700"}`}>
+              <div
+                className={`mb-4 rounded-lg p-3 text-sm ${message.type === "success" ? "bg-blue-50 text-blue-700" : "bg-red-50 text-red-700"}`}
+              >
                 {message.text}
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-dark dark:text-white">Judul <span className="text-red-500">*</span></label>
+                <label className="mb-1.5 block text-sm font-medium text-dark dark:text-white">
+                  Judul <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={form.title}
-                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, title: e.target.value }))
+                  }
                   required
                   placeholder="Contoh: Jadwal Pembayaran Simpanan Wajib"
                   className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-strokedark dark:text-white"
@@ -259,10 +314,14 @@ function PengumumanContent() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-dark dark:text-white">Isi Pesan <span className="text-red-500">*</span></label>
+                <label className="mb-1.5 block text-sm font-medium text-dark dark:text-white">
+                  Isi Pesan <span className="text-red-500">*</span>
+                </label>
                 <textarea
                   value={form.message}
-                  onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, message: e.target.value }))
+                  }
                   required
                   rows={4}
                   placeholder="Tulis isi pengumuman di sini..."
@@ -272,21 +331,29 @@ function PengumumanContent() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-dark dark:text-white">Tanggal Mulai <span className="text-red-500">*</span></label>
+                  <label className="mb-1.5 block text-sm font-medium text-dark dark:text-white">
+                    Tanggal Mulai <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="date"
                     value={form.startDate}
-                    onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, startDate: e.target.value }))
+                    }
                     required
                     className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-strokedark dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-dark dark:text-white">Tanggal Selesai <span className="text-red-500">*</span></label>
+                  <label className="mb-1.5 block text-sm font-medium text-dark dark:text-white">
+                    Tanggal Selesai <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="date"
                     value={form.endDate}
-                    onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, endDate: e.target.value }))
+                    }
                     required
                     min={form.startDate}
                     className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-strokedark dark:text-white"
@@ -299,10 +366,15 @@ function PengumumanContent() {
                   type="checkbox"
                   id="isActive"
                   checked={form.isActive}
-                  onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, isActive: e.target.checked }))
+                  }
                   className="h-4 w-4 rounded border-stroke accent-primary"
                 />
-                <label htmlFor="isActive" className="text-sm text-dark dark:text-white">
+                <label
+                  htmlFor="isActive"
+                  className="text-sm text-dark dark:text-white"
+                >
                   Aktifkan pengumuman ini
                 </label>
               </div>
@@ -321,7 +393,11 @@ function PengumumanContent() {
                   disabled={saving}
                   className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-70"
                 >
-                  {saving ? "Menyimpan..." : editingId ? "Simpan Perubahan" : "Buat Pengumuman"}
+                  {saving
+                    ? "Menyimpan..."
+                    : editingId
+                      ? "Simpan Perubahan"
+                      : "Buat Pengumuman"}
                 </button>
               </div>
             </form>
@@ -333,9 +409,12 @@ function PengumumanContent() {
       {deleteConfirmId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl dark:bg-boxdark">
-            <h3 className="mb-2 text-lg font-bold text-dark dark:text-white">Hapus Pengumuman?</h3>
+            <h3 className="mb-2 text-lg font-bold text-dark dark:text-white">
+              Hapus Pengumuman?
+            </h3>
             <p className="mb-5 text-sm text-gray-500 dark:text-gray-400">
-              Tindakan ini tidak dapat dibatalkan. Pengumuman akan dihapus permanen.
+              Tindakan ini tidak dapat dibatalkan. Pengumuman akan dihapus
+              permanen.
             </p>
             <div className="flex justify-end gap-3">
               <button
