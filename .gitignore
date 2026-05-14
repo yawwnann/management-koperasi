@@ -19,7 +19,7 @@
 /Frontend/out/
 
 # backend build output (NestJS)
-/backend/dist/
+#/backend/dist/
 
 # production/build output
 /build/
