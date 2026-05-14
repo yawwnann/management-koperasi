@@ -116,7 +116,6 @@ async function main() {
         },
       });
     }
-    bit.lydaftaradeptoffline;
 
     if (simpananWajib > 0) {
       await prisma.payment.create({
