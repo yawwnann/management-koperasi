@@ -72,7 +72,14 @@ export class SavingsService {
       const amount = Number(withdrawal.nominal);
       const type = withdrawal.savingType.toLowerCase();
 
-      if (type === 'pokok') {
+      if (type === 'semua') {
+        const currentTotal = breakdown.pokok + breakdown.wajib + breakdown.sukarela;
+        if (currentTotal > 0) {
+          breakdown.pokok -= Math.round((amount * breakdown.pokok) / currentTotal);
+          breakdown.wajib -= Math.round((amount * breakdown.wajib) / currentTotal);
+          breakdown.sukarela -= Math.round((amount * breakdown.sukarela) / currentTotal);
+        }
+      } else if (type === 'pokok') {
         breakdown.pokok -= amount;
       } else if (type === 'wajib') {
         breakdown.wajib -= amount;

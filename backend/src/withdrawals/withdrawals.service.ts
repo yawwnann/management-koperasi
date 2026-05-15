@@ -70,7 +70,18 @@ export class WithdrawalsService {
     // Subtract approved withdrawals by type
     approvedWithdrawals.forEach((withdrawal) => {
       const amount = Number(withdrawal.nominal);
-      breakdown[withdrawal.savingType] -= amount;
+      const type = withdrawal.savingType;
+
+      if (type === 'Semua') {
+        const currentTotal = breakdown.Pokok + breakdown.Wajib + breakdown.Sukarela;
+        if (currentTotal > 0) {
+          breakdown.Pokok -= Math.round((amount * breakdown.Pokok) / currentTotal);
+          breakdown.Wajib -= Math.round((amount * breakdown.Wajib) / currentTotal);
+          breakdown.Sukarela -= Math.round((amount * breakdown.Sukarela) / currentTotal);
+        }
+      } else if (breakdown[type] !== undefined) {
+        breakdown[type] -= amount;
+      }
     });
 
     // Validate if user has enough balance for the specific saving type
@@ -361,8 +372,17 @@ export class WithdrawalsService {
 
     approvedWithdrawals.forEach((w) => {
       const amount = Number(w.nominal);
-      if (breakdown[w.savingType] !== undefined) {
-        breakdown[w.savingType] -= amount;
+      const type = w.savingType;
+
+      if (type === 'Semua') {
+        const currentTotal = breakdown.Pokok + breakdown.Wajib + breakdown.Sukarela;
+        if (currentTotal > 0) {
+          breakdown.Pokok -= Math.round((amount * breakdown.Pokok) / currentTotal);
+          breakdown.Wajib -= Math.round((amount * breakdown.Wajib) / currentTotal);
+          breakdown.Sukarela -= Math.round((amount * breakdown.Sukarela) / currentTotal);
+        }
+      } else if (breakdown[type] !== undefined) {
+        breakdown[type] -= amount;
       }
     });
 
