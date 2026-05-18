@@ -7,24 +7,35 @@ import {
   Param,
   Query,
   Req,
+  NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { WithdrawalsService } from './withdrawals.service';
 import { CreateWithdrawalDto } from './dto/create-withdrawal.dto';
 import { ApproveWithdrawalDto } from './dto/approve-withdrawal.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 
+interface JwtRequest extends Request {
+  user: {
+    sub: string;
+    role: string;
+    email: string;
+    name: string;
+  };
+}
+
 @Controller('withdrawals')
 export class WithdrawalsController {
   constructor(private withdrawalsService: WithdrawalsService) {}
 
   @Post()
-  create(@Req() req, @Body() createWithdrawalDto: CreateWithdrawalDto) {
+  create(@Req() req: JwtRequest, @Body() createWithdrawalDto: CreateWithdrawalDto) {
     return this.withdrawalsService.create(req.user.sub, createWithdrawalDto);
   }
 
   @Post('withdraw-all')
   withdrawAll(
-    @Req() req,
+    @Req() req: JwtRequest,
     @Body() body: { reason: string; paymentMethod?: string },
   ) {
     return this.withdrawalsService.withdrawAll(
@@ -36,7 +47,7 @@ export class WithdrawalsController {
 
   @Get()
   findAll(
-    @Req() req,
+    @Req() req: JwtRequest,
     @Query('userId') userId?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
@@ -53,8 +64,8 @@ export class WithdrawalsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.withdrawalsService.findOne(id);
+  findOne(@Param('id') id: string, @Req() req: JwtRequest) {
+    return this.withdrawalsService.findOne(id, req.user.sub, req.user.role);
   }
 
   @Patch(':id/approve')
@@ -62,7 +73,7 @@ export class WithdrawalsController {
   approve(
     @Param('id') id: string,
     @Body() approveWithdrawalDto: ApproveWithdrawalDto,
-    @Req() req,
+    @Req() req: JwtRequest,
   ) {
     return this.withdrawalsService.approve(
       id,

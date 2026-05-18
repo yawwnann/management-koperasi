@@ -139,7 +139,7 @@ export class WithdrawalsService {
     });
 
     for (const admin of admins) {
-      this.emailService.sendAdminWithdrawalNotification(
+      await this.emailService.sendAdminWithdrawalNotification(
         admin.email,
         withdrawal.user.name,
         Number(withdrawal.nominal),
@@ -317,7 +317,7 @@ export class WithdrawalsService {
     return updatedWithdrawal;
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, userId?: string, role?: string) {
     const withdrawal = await this.prisma.withdrawal.findUnique({
       where: { id },
       include: {
@@ -336,20 +336,36 @@ export class WithdrawalsService {
       throw new NotFoundException('Withdrawal not found');
     }
 
+    // Authorization: ADMIN can view any withdrawal, ANGGOTA only their own
+    if (role !== 'ADMIN' && withdrawal.userId !== userId) {
+      throw new NotFoundException('Withdrawal not found');
+    }
+
     return withdrawal;
   }
 
-  async withdrawAll(userId: string, reason: string, paymentMethod?: string) {
-    // Check user's savings balance
-    const saving = await this.prisma.saving.findUnique({
-      where: { userId },
-    });
+   async withdrawAll(userId: string, reason: string, paymentMethod?: string) {
+     // Check user's savings balance
+     const saving = await this.prisma.saving.findUnique({
+       where: { userId },
+     });
 
-    if (!saving || saving.total.equals(0)) {
-      throw new BadRequestException('No balance available to withdraw');
-    }
+     if (!saving || saving.total.equals(0)) {
+       throw new BadRequestException('No balance available to withdraw');
+     }
 
-    // Get savings breakdown
+     // Check for existing pending withdrawal to prevent duplicate submissions
+     const existingPendingWithdrawal = await this.prisma.withdrawal.findFirst({
+       where: { userId, status: 'PENDING' },
+     });
+
+     if (existingPendingWithdrawal) {
+       throw new BadRequestException(
+         'Anda masih memiliki penarikan yang menunggu verifikasi. Silakan tunggu admin memproses penarikan Anda sebelum mengajukan penarikan baru.',
+       );
+     }
+
+     // Get savings breakdown
     const approvedPayments = await this.prisma.payment.findMany({
       where: { userId, status: 'APPROVED' },
       select: { nominal: true, description: true },

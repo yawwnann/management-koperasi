@@ -85,11 +85,12 @@ export class PaymentsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.paymentsService.findOne(id);
+  findOne(@Param('id') id: string, @Req() req: JwtRequest) {
+    return this.paymentsService.findOne(id, req.user.sub, req.user.role);
   }
 
   @Patch(':id/approve')
+
   @Roles('ADMIN')
   approve(
     @Param('id') id: string,
