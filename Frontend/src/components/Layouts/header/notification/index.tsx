@@ -102,30 +102,34 @@ export function Notification() {
 
       <DropdownContent
         align={isMobile ? "end" : "center"}
-        className="w-[22rem] rounded-xl border border-stroke bg-white p-4 shadow-xl dark:border-dark-3 dark:bg-gray-dark sm:w-[26rem]"
+        className={cn(
+          "rounded-xl border border-stroke bg-white shadow-xl dark:border-dark-3 dark:bg-gray-dark",
+          "w-[calc(100vw-2rem)] max-w-[26rem] p-3 sm:w-[26rem] sm:p-4",
+          isMobile && "fixed right-4 left-4 top-20 w-auto"
+        )}
       >
-        <div className="mb-3 flex items-center justify-between">
-          <span className="text-lg font-semibold text-dark dark:text-white">
-            Notifications
-          </span>
-          <div className="flex items-center gap-2.5">
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-base font-semibold text-dark dark:text-white sm:text-lg">
+              Notifikasi
+            </span>
             {unreadCount > 0 && (
               <span className="rounded-md bg-primary px-2 py-0.5 text-xs font-semibold text-white">
                 {unreadCount} baru
               </span>
             )}
-            {notifications.length > 0 && (
-              <button
-                onClick={allRead ? handleDeleteAll : handleMarkAllRead}
-                className="text-sm font-medium text-primary transition-colors hover:text-opacity-80"
-              >
-                {allRead ? "Hapus semua notifikasi" : "Tandai semua dibaca"}
-              </button>
-            )}
           </div>
+          {notifications.length > 0 && (
+            <button
+              onClick={allRead ? handleDeleteAll : handleMarkAllRead}
+              className="self-end text-xs font-medium text-primary transition-colors hover:text-opacity-80 sm:text-sm"
+            >
+              {allRead ? "Hapus semua" : "Tandai semua dibaca"}
+            </button>
+          )}
         </div>
 
-        <ul className="custom-scrollbar mb-4 max-h-[26rem] space-y-2 overflow-y-auto pr-1">
+        <ul className="custom-scrollbar mb-3 max-h-[60vh] space-y-1.5 overflow-y-auto pr-0.5 sm:mb-4 sm:max-h-[26rem] sm:space-y-2 sm:pr-1">
           {isLoading ? (
             <li className="py-8 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
               Memuat notifikasi...
@@ -140,29 +144,29 @@ export function Notification() {
                 <Link
                   href={getNotificationUrl(notification)}
                   onClick={() => handleNotificationClick(notification.id)}
-                  className={`flex gap-3.5 rounded-xl p-3 outline-none transition-all hover:bg-gray-2 focus-visible:bg-gray-2 dark:hover:bg-dark-3 dark:focus-visible:bg-dark-3 ${
+                  className={`flex gap-2.5 rounded-lg p-2.5 outline-none transition-all hover:bg-gray-2 focus-visible:bg-gray-2 dark:hover:bg-dark-3 dark:focus-visible:bg-dark-3 sm:gap-3.5 sm:rounded-xl sm:p-3 ${
                     !notification.isRead
                       ? "bg-gray-1 shadow-sm dark:bg-boxdark-2"
                       : ""
                   }`}
                 >
-                  <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gray-2 text-xl shadow-sm dark:bg-dark-3">
+                  <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gray-2 text-base shadow-sm dark:bg-dark-3 sm:size-11 sm:text-xl">
                     {getNotificationIcon(notification.type)}
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="mb-0.5 flex items-start justify-between gap-2">
-                      <strong className="block truncate text-base font-semibold text-dark dark:text-white">
+                    <div className="mb-0.5 flex items-start justify-between gap-1.5">
+                      <strong className="block truncate text-sm font-semibold text-dark dark:text-white sm:text-base">
                         {notification.title}
                       </strong>
                       {!notification.isRead && (
-                        <span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-primary shadow-sm" />
+                        <span className="mt-1 size-2 shrink-0 rounded-full bg-primary shadow-sm sm:mt-1.5 sm:size-2.5" />
                       )}
                     </div>
-                    <p className="mb-1.5 line-clamp-2 text-sm leading-snug text-dark-5 dark:text-dark-6">
+                    <p className="mb-1 line-clamp-2 text-xs leading-snug text-dark-5 dark:text-dark-6 sm:mb-1.5 sm:text-sm">
                       {notification.message}
                     </p>
-                    <span className="block text-xs font-medium text-gray-400 dark:text-gray-500">
+                    <span className="block text-[10px] font-medium text-gray-400 dark:text-gray-500 sm:text-xs">
                       {formatTime(notification.createdAt)}
                     </span>
                   </div>
@@ -176,7 +180,7 @@ export function Notification() {
           <Link
             href="/settings#notifications"
             onClick={() => setIsOpen(false)}
-            className="block rounded-lg border border-primary/20 bg-primary/5 p-2.5 text-center text-sm font-medium tracking-wide text-primary outline-none transition-colors hover:bg-primary/15 focus:bg-primary/15"
+            className="block rounded-lg border border-primary/20 bg-primary/5 p-2 text-center text-xs font-medium tracking-wide text-primary outline-none transition-colors hover:bg-primary/15 focus:bg-primary/15 sm:p-2.5 sm:text-sm"
           >
             Lihat semua notifikasi
           </Link>

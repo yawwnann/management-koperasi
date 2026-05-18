@@ -208,35 +208,53 @@ async function main() {
     for (const entry of sukarela) {
       const nominal = parseInt(entry.nominal, 10);
 
-      // Skip jika nominal 0 atau kosong
-      if (!nominal || nominal <= 0) continue;
+      // Skip jika nominal 0 atau tidak valid
+      if (!nominal || nominal === 0) continue;
 
       const createdAt = parseDate(entry.tanggal);
-      userSukarelaTotal += nominal;
+      userSukarelaTotal += nominal; // nominal negatif otomatis akan mengurangi saldo
 
-      // Buat Payment untuk simpanan sukarela
-      const payment = await prisma.payment.create({
-        data: {
-          userId: user.id,
-          nominal: nominal.toFixed(2),
-          proofImage: 'seeded_from_data_anggota',
-          status: 'APPROVED',
-          description: 'Simpanan Sukarela',
-          paymentMethod: 'Cash',
-          createdAt,
-        },
-      });
-      totalSukarelaPayments++;
+      if (nominal > 0) {
+        // Buat Payment untuk simpanan sukarela
+        const payment = await prisma.payment.create({
+          data: {
+            userId: user.id,
+            nominal: nominal.toFixed(2),
+            proofImage: 'seeded_from_data_anggota',
+            status: 'APPROVED',
+            description: 'Simpanan Sukarela',
+            paymentMethod: 'Cash',
+            createdAt,
+          },
+        });
+        totalSukarelaPayments++;
 
-      // Buat VoluntarySaving
-      await prisma.voluntarySaving.create({
-        data: {
-          userId: user.id,
-          nominal,
-          paymentId: payment.id,
-        },
-      });
-      totalSukarelaVoluntary++;
+        // Buat VoluntarySaving
+        await prisma.voluntarySaving.create({
+          data: {
+            userId: user.id,
+            nominal,
+            paymentId: payment.id,
+            createdAt, // Set createdAt dari JSON
+          },
+        });
+        totalSukarelaVoluntary++;
+      } else {
+        // Nominal negatif berarti penarikan (Withdrawal)
+        const withdrawalNominal = Math.abs(nominal);
+        await prisma.withdrawal.create({
+          data: {
+            userId: user.id,
+            nominal: withdrawalNominal.toFixed(2),
+            reason: 'Penarikan Sukarela (Migrasi)',
+            savingType: 'Sukarela',
+            paymentMethod: 'Cash',
+            status: 'APPROVED',
+            createdAt,
+          },
+        });
+        // Jika perlu counter tambahan untuk withdrawal bisa ditambah di sini
+      }
     }
 
     // ── 3c. Update Saving.total ────────────────────────────

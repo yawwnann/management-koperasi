@@ -21,7 +21,6 @@ import {
   Wallet,
   X,
   Calendar,
-  PiggyBank,
   TrendingUp,
   Landmark,
   FileText,
@@ -454,7 +453,7 @@ function RiwayatSimpananContent() {
                       </p>
                     </div>
                     <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-green-50 transition-colors group-hover:bg-green-100 dark:bg-green-900/30 dark:group-hover:bg-green-900/50">
-                      <PiggyBank className="h-5 w-5 text-green-500" />
+                      <Wallet className="h-5 w-5 text-green-500" />
                     </div>
                   </div>
                 </div>
@@ -663,7 +662,7 @@ function RiwayatSimpananContent() {
             <div className="flex flex-col gap-3 border-b border-stroke p-5 sm:flex-row sm:items-center sm:justify-between dark:border-strokedark">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 dark:bg-green-900/30">
-                  <PiggyBank className="h-5 w-5 text-green-500" />
+                  <Wallet className="h-5 w-5 text-green-500" />
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-dark dark:text-white">
@@ -698,7 +697,7 @@ function RiwayatSimpananContent() {
             ) : voluntarySavings.length === 0 ? (
               <div className="py-14 px-6 text-center">
                 <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-50 dark:bg-green-900/20">
-                  <PiggyBank className="h-6 w-6 text-green-300 dark:text-green-700" />
+                  <Wallet className="h-6 w-6 text-green-300 dark:text-green-700" />
                 </div>
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   Belum ada riwayat simpanan sukarela
@@ -740,7 +739,7 @@ function RiwayatSimpananContent() {
                           <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 shrink-0 text-gray-400" />
-                              {formatDate(vs.createdAt)}
+                              {formatDate(vs.payment?.createdAt || vs.createdAt)}
                             </div>
                           </td>
                           <td className="px-4 py-3 text-right text-sm font-semibold text-dark dark:text-white">
