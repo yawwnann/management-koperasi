@@ -36,6 +36,17 @@ export class WithdrawalsService {
       throw new BadRequestException('Insufficient balance');
     }
 
+    // Check for existing pending withdrawal to prevent duplicate submissions
+    const existingPendingWithdrawal = await this.prisma.withdrawal.findFirst({
+      where: { userId, status: 'PENDING' },
+    });
+
+    if (existingPendingWithdrawal) {
+      throw new BadRequestException(
+        'Anda masih memiliki penarikan yang menunggu verifikasi. Silakan tunggu admin memproses penarikan Anda sebelum mengajukan penarikan baru.',
+      );
+    }
+
     // Get savings breakdown to validate specific saving type balance
     const approvedPayments = await this.prisma.payment.findMany({
       where: { userId, status: 'APPROVED' },
