@@ -33,6 +33,7 @@ function VerifikasiPembayaranContent() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("PENDING");
   const [selectedPayment, setSelectedPayment] = useState<any | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [verificationMode, setVerificationMode] = useState<"approve" | "reject" | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState<{
@@ -78,65 +79,44 @@ function VerifikasiPembayaranContent() {
   const handleApprove = useCallback(async (payment: any) => {
     setSelectedPayment(payment);
     setRejectionReason("");
+    setVerificationMode("approve");
     setShowModal(true);
   }, []);
 
   const handleReject = useCallback(async (payment: any) => {
     setSelectedPayment(payment);
     setRejectionReason("");
+    setVerificationMode("reject");
     setShowModal(true);
   }, []);
 
   const handleSubmitVerification = useCallback(async () => {
-    if (!selectedPayment) return;
+    if (!selectedPayment || !verificationMode) return;
 
     setProcessing(true);
     try {
       await paymentsApi.approve(selectedPayment.id, {
-        status: "APPROVED",
-        rejectionReason: rejectionReason || undefined,
+        status: verificationMode === "approve" ? "APPROVED" : "REJECTED",
+        rejectionReason: verificationMode === "reject" ? (rejectionReason || "Tidak ada alasan") : (rejectionReason || undefined),
       });
 
       setMessage({
         type: "success",
-        text: "Pembayaran berhasil diverifikasi.",
+        text: `Pembayaran berhasil ${verificationMode === "approve" ? "disetujui" : "ditolak"}.`,
       });
       setShowModal(false);
       setSelectedPayment(null);
+      setVerificationMode(null);
       loadPayments();
     } catch (error: any) {
       setMessage({
         type: "error",
-        text: error?.message || "Gagal memverifikasi pembayaran.",
+        text: error?.message || `Gagal ${verificationMode === "approve" ? "menyetujui" : "menolak"} pembayaran.`,
       });
     } finally {
       setProcessing(false);
     }
-  }, [selectedPayment, rejectionReason]);
-
-  const handleRejectSubmit = useCallback(async () => {
-    if (!selectedPayment) return;
-
-    setProcessing(true);
-    try {
-      await paymentsApi.approve(selectedPayment.id, {
-        status: "REJECTED",
-        rejectionReason: rejectionReason || "Tidak ada alasan",
-      });
-
-      setMessage({ type: "success", text: "Pembayaran berhasil ditolak." });
-      setShowModal(false);
-      setSelectedPayment(null);
-      loadPayments();
-    } catch (error: any) {
-      setMessage({
-        type: "error",
-        text: error?.message || "Gagal menolak pembayaran.",
-      });
-    } finally {
-      setProcessing(false);
-    }
-  }, [selectedPayment, rejectionReason]);
+  }, [selectedPayment, verificationMode, rejectionReason]);
 
   const filteredPayments =
     statusFilter === "ALL"
@@ -549,6 +529,7 @@ function VerifikasiPembayaranContent() {
                   onClick={() => {
                     setShowModal(false);
                     setSelectedPayment(null);
+                    setVerificationMode(null);
                     setRejectionReason("");
                   }}
                   className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
@@ -617,19 +598,21 @@ function VerifikasiPembayaranContent() {
               )}
 
               {/* Rejection Reason */}
-              <div>
-                <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                  Alasan Penolakan{" "}
-                  <span className="text-gray-400">(opsional)</span>
-                </label>
-                <textarea
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Masukkan alasan penolakan..."
-                  rows={3}
-                  className="w-full rounded-xl border border-stroke bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-primary dark:border-strokedark dark:bg-gray-800 dark:text-white dark:focus:border-primary"
-                />
-              </div>
+              {verificationMode === "reject" && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
+                    Alasan Penolakan{" "}
+                    <span className="text-gray-400">(opsional)</span>
+                  </label>
+                  <textarea
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    placeholder="Masukkan alasan penolakan..."
+                    rows={3}
+                    className="w-full rounded-xl border border-stroke bg-white px-4 py-3 text-sm text-dark outline-none transition focus:border-primary dark:border-strokedark dark:bg-gray-800 dark:text-white dark:focus:border-primary"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Modal Footer */}
@@ -638,6 +621,7 @@ function VerifikasiPembayaranContent() {
                 onClick={() => {
                   setShowModal(false);
                   setSelectedPayment(null);
+                  setVerificationMode(null);
                   setRejectionReason("");
                 }}
                 className="rounded-xl px-5 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-700"
@@ -645,22 +629,25 @@ function VerifikasiPembayaranContent() {
               >
                 Batal
               </button>
-              <button
-                onClick={handleSubmitVerification}
-                className="flex items-center gap-2 rounded-xl bg-blue-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={processing}
-              >
-                <Check className="h-4 w-4" />
-                {processing ? "Memproses..." : "Setujui"}
-              </button>
-              <button
-                onClick={handleRejectSubmit}
-                className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={processing}
-              >
-                <X className="h-4 w-4" />
-                {processing ? "Memproses..." : "Tolak"}
-              </button>
+              {verificationMode === "approve" ? (
+                <button
+                  onClick={handleSubmitVerification}
+                  className="flex items-center gap-2 rounded-xl bg-blue-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={processing}
+                >
+                  <Check className="h-4 w-4" />
+                  {processing ? "Memproses..." : "Setujui"}
+                </button>
+              ) : (
+                <button
+                  onClick={handleSubmitVerification}
+                  className="flex items-center gap-2 rounded-xl bg-red-500 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={processing}
+                >
+                  <X className="h-4 w-4" />
+                  {processing ? "Memproses..." : "Tolak"}
+                </button>
+              )}
             </div>
           </div>
         </div>

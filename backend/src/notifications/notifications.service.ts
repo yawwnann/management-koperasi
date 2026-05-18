@@ -102,10 +102,9 @@ export class NotificationsService {
     const where: any = { isRead: false };
 
     if (role === 'ADMIN') {
-      // Admins see all unread notifications
+      where.OR = [{ userId }, { isAdmin: true }, { userId: null }];
     } else {
-      // Users see their own unread notifications OR general system notifications
-      where.OR = [{ userId }, { userId: null }];
+      where.OR = [{ userId }, { userId: null, isAdmin: false }];
     }
 
     return await this.prisma.notification.count({ where });

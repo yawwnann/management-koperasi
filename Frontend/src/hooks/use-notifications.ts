@@ -130,6 +130,10 @@ export function useNotifications(): UseNotificationsReturn {
       const token = localStorage.getItem("auth_token");
       if (!token) return;
 
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+
       const API_URL =
         process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api";
       const baseURL = API_URL.replace("/api", "");
@@ -167,7 +171,7 @@ export function useNotifications(): UseNotificationsReturn {
           title: `${data.type === "payment" ? "Pembayaran" : data.type === "withdrawal" ? "Penarikan" : "Sistem"} ${data.action === "created" ? "Baru" : data.action === "approved" ? "Disetujui" : "Ditolak"}`,
           message: `${data.data?.userName || "User"} - Rp${Number(data.data?.amount || 0).toLocaleString("id-ID")}`,
           isRead: false,
-          actionUrl: `/${data.type}s/riwayat/${data.data?.id}`,
+          actionUrl: data.data?.id ? `/${data.type}s/riwayat/${data.data.id}` : "",
           createdAt: new Date().toISOString(),
         };
         setNotifications((prev) => [notification, ...prev]);
