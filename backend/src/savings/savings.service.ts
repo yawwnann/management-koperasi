@@ -228,8 +228,37 @@ export class SavingsService {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
     });
+
+    const voluntaryWithdrawals = await this.prisma.withdrawal.findMany({
+      where: { userId, status: 'APPROVED', savingType: 'Sukarela' },
+      select: {
+        id: true,
+        nominal: true,
+        createdAt: true,
+        paymentMethod: true,
+      },
+    });
+
+    const combinedVoluntary = [
+      ...voluntarySavings.map((vs) => ({
+        id: vs.id,
+        nominal: Number(vs.nominal),
+        createdAt: vs.createdAt,
+        payment: vs.payment,
+      })),
+      ...voluntaryWithdrawals.map((vw) => ({
+        id: vw.id,
+        nominal: -Number(vw.nominal),
+        createdAt: vw.createdAt,
+        payment: {
+          id: vw.id,
+          createdAt: vw.createdAt,
+          status: 'APPROVED',
+          paymentMethod: vw.paymentMethod,
+        },
+      })),
+    ].sort((a, b) => new Date(b.payment?.createdAt || b.createdAt).getTime() - new Date(a.payment?.createdAt || a.createdAt).getTime());
 
     return {
       userId,
@@ -242,12 +271,7 @@ export class SavingsService {
         paidAt: ms.paidAt,
         payment: ms.payment,
       })),
-      voluntarySavings: voluntarySavings.map((vs) => ({
-        id: vs.id,
-        nominal: Number(vs.nominal),
-        createdAt: vs.createdAt,
-        payment: vs.payment,
-      })),
+      voluntarySavings: combinedVoluntary,
     };
   }
 }
